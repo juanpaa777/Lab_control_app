@@ -51,11 +51,26 @@ class EquipmentCard extends StatelessWidget {
                   color: AppTheme.background,
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: Icon(
-                  _getCategoryIcon(equipment.category.name),
-                  color: AppTheme.primary,
-                  size: 30,
-                ),
+                child: (equipment.imageUrl != null && equipment.imageUrl!.isNotEmpty)
+                    ? ClipRRect(
+                        borderRadius: BorderRadius.circular(12),
+                        child: Image.network(
+                          equipment.imageUrl!,
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) {
+                            return Icon(
+                              _getCategoryIcon(equipment.category.name),
+                              color: AppTheme.primary,
+                              size: 30,
+                            );
+                          },
+                        ),
+                      )
+                    : Icon(
+                        _getCategoryIcon(equipment.category.name),
+                        color: AppTheme.primary,
+                        size: 30,
+                      ),
               ),
               const SizedBox(width: 16),
               // Detalles del equipo

@@ -61,11 +61,26 @@ class EquipmentDetailScreen extends ConsumerWidget {
                         borderRadius: BorderRadius.circular(16),
                         border: Border.all(color: AppTheme.primary.withOpacity(0.1)),
                       ),
-                      child: Icon(
-                        _getCategoryIcon(equipment.category.name),
-                        size: 80,
-                        color: AppTheme.primary,
-                      ),
+                      child: (equipment.imageUrl != null && equipment.imageUrl!.isNotEmpty)
+                          ? ClipRRect(
+                              borderRadius: BorderRadius.circular(16),
+                              child: Image.network(
+                                equipment.imageUrl!,
+                                fit: BoxFit.cover,
+                                errorBuilder: (context, error, stackTrace) {
+                                  return Icon(
+                                    _getCategoryIcon(equipment.category.name),
+                                    size: 80,
+                                    color: AppTheme.primary,
+                                  );
+                                },
+                              ),
+                            )
+                          : Icon(
+                              _getCategoryIcon(equipment.category.name),
+                              size: 80,
+                              color: AppTheme.primary,
+                            ),
                     ),
                   ),
                   const SizedBox(height: 24),
