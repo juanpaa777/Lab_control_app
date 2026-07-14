@@ -21,4 +21,14 @@ class ReservationRepositoryImpl implements ReservationRepository {
   Future<Reservation> cancelReservation(String reservationId) {
     return datasource.cancelReservation(reservationId);
   }
+
+  @override
+  Future<List<Reservation>> getAllReservations() {
+    return datasource.getAllReservations();
+  }
+
+  @override
+  Future<Reservation> updateReservationStatus(String reservationId, String status) {
+    return datasource.updateReservationStatus(reservationId, status);
+  }
 }

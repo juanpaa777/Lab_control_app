@@ -31,8 +31,8 @@ class ApiReservationDatasource implements ReservationDatasource {
         'userId': reservation.userId,
         'equipmentId': reservation.equipment.id,
         'quantity': reservation.quantity,
-        'pickupDate': reservation.pickupDate.toIso8601String(),
-        'returnDate': reservation.returnDate.toIso8601String(),
+        'pickupDate': reservation.pickupDate.toUtc().toIso8601String(),
+        'returnDate': reservation.returnDate.toUtc().toIso8601String(),
       });
       final model = ReservationModel.fromJson(response.data as Map<String, dynamic>);
       return ReservationMapper.modelToEntity(model);
@@ -52,6 +52,35 @@ class ApiReservationDatasource implements ReservationDatasource {
       _handleDioError(e, 'Error al cancelar la reserva.');
     }
     throw Exception('Error inesperado al cancelar reserva.');
+  }
+
+  @override
+  Future<List<Reservation>> getAllReservations() async {
+    try {
+      final response = await dio.get('/reservations');
+      final list = (response.data as List)
+          .map((item) => ReservationModel.fromJson(item as Map<String, dynamic>))
+          .map((model) => ReservationMapper.modelToEntity(model))
+          .toList();
+      return list;
+    } on DioException catch (e) {
+      _handleDioError(e, 'Error al cargar todas las reservas.');
+    }
+    throw Exception('Error inesperado al cargar reservas.');
+  }
+
+  @override
+  Future<Reservation> updateReservationStatus(String reservationId, String status) async {
+    try {
+      final response = await dio.patch('/reservations/$reservationId/status', data: {
+        'status': status,
+      });
+      final model = ReservationModel.fromJson(response.data as Map<String, dynamic>);
+      return ReservationMapper.modelToEntity(model);
+    } on DioException catch (e) {
+      _handleDioError(e, 'Error al actualizar el estado de la reserva.');
+    }
+    throw Exception('Error inesperado al actualizar reserva.');
   }
 
   void _handleDioError(DioException e, String defaultMessage) {

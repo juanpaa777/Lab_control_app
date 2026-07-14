@@ -9,6 +9,7 @@ class UserMapper {
       email: model.email,
       studentId: model.studentId,
       career: model.career,
+      role: model.role,
     );
   }
 
@@ -19,6 +20,7 @@ class UserMapper {
       email: entity.email,
       studentId: entity.studentId,
       career: entity.career,
+      role: entity.role,
     );
   }
 }

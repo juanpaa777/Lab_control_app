@@ -84,4 +84,74 @@ class MockEquipmentDatasource implements EquipmentDatasource {
       throw Exception('Equipo no encontrado');
     }
   }
+
+  @override
+  Future<Equipment> createEquipment({
+    required String name,
+    required String categoryId,
+    required String code,
+    required String location,
+    required int totalUnits,
+    required String imageUrl,
+  }) async {
+    await Future.delayed(const Duration(milliseconds: 300));
+    final category = _categories.firstWhere((c) => c.id == categoryId,
+        orElse: () => _categories[0]);
+    
+    final newEq = Equipment(
+      id: 'eq-${DateTime.now().millisecondsSinceEpoch}',
+      name: name,
+      category: category,
+      code: code,
+      location: location,
+      totalUnits: totalUnits,
+      availableUnits: totalUnits,
+      imageUrl: imageUrl.isEmpty ? null : imageUrl,
+    );
+    _equipmentList.add(newEq);
+    return newEq;
+  }
+
+  @override
+  Future<Equipment> updateEquipment({
+    required String id,
+    required String name,
+    required String categoryId,
+    required String code,
+    required String location,
+    required int totalUnits,
+    required String imageUrl,
+  }) async {
+    await Future.delayed(const Duration(milliseconds: 300));
+    final index = _equipmentList.indexWhere((eq) => eq.id == id);
+    if (index == -1) throw Exception('Equipo no encontrado');
+
+    final existingEq = _equipmentList[index];
+    final currentlyLent = existingEq.totalUnits - existingEq.availableUnits;
+    if (totalUnits < currentlyLent) {
+      throw Exception('No puedes reducir el stock por debajo de lo prestado ($currentlyLent)');
+    }
+
+    final category = _categories.firstWhere((c) => c.id == categoryId,
+        orElse: () => _categories[0]);
+
+    final updatedEq = Equipment(
+      id: id,
+      name: name,
+      category: category,
+      code: code,
+      location: location,
+      totalUnits: totalUnits,
+      availableUnits: totalUnits - currentlyLent,
+      imageUrl: imageUrl.isEmpty ? null : imageUrl,
+    );
+    _equipmentList[index] = updatedEq;
+    return updatedEq;
+  }
+
+  @override
+  Future<void> deleteEquipment(String id) async {
+    await Future.delayed(const Duration(milliseconds: 300));
+    _equipmentList.removeWhere((eq) => eq.id == id);
+  }
 }

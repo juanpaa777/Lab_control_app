@@ -9,6 +9,8 @@ class ReservationCard extends StatelessWidget {
   final VoidCallback? onTap;
   final VoidCallback? onQrTap;
   final VoidCallback? onCancel;
+  final VoidCallback? onDeliver;
+  final VoidCallback? onReturn;
 
   const ReservationCard({
     super.key,
@@ -16,6 +18,8 @@ class ReservationCard extends StatelessWidget {
     this.onTap,
     this.onQrTap,
     this.onCancel,
+    this.onDeliver,
+    this.onReturn,
   });
 
   @override
@@ -80,6 +84,26 @@ class ReservationCard extends StatelessWidget {
                 color: AppTheme.textSecondary,
               ),
             ),
+            if (reservation.userName != null) ...[
+              const SizedBox(height: 6),
+              Row(
+                children: [
+                  const Icon(Icons.person_outline_rounded, size: 14, color: AppTheme.primary),
+                  const SizedBox(width: 4),
+                  Expanded(
+                    child: Text(
+                      'Solicitante: ${reservation.userName} (${reservation.studentId ?? "Docente"})',
+                      style: const TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: AppTheme.textPrimary,
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ],
+              ),
+            ],
             const Divider(height: 24, thickness: 0.5),
             // Fechas
             Row(
@@ -159,8 +183,25 @@ class ReservationCard extends StatelessWidget {
                         foregroundColor: AppTheme.unavailable,
                       ),
                     ),
-                  const SizedBox(width: 8),
-                  if (onQrTap != null)
+                  if (onCancel != null && (onDeliver != null || onQrTap != null))
+                    const SizedBox(width: 8),
+                  if (onDeliver != null)
+                    ElevatedButton.icon(
+                      onPressed: onDeliver,
+                      icon: const Icon(Icons.outbox_rounded, size: 18),
+                      label: const Text('Entregar Equipo'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppTheme.primary,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                        minimumSize: Size.zero,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        textStyle: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
+                      ),
+                    )
+                  else if (onQrTap != null)
                     ElevatedButton.icon(
                       onPressed: onQrTap,
                       icon: const Icon(Icons.qr_code_2_rounded, size: 18),
@@ -176,6 +217,31 @@ class ReservationCard extends StatelessWidget {
                         textStyle: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
                       ),
                     ),
+                ],
+              ),
+            ],
+
+            // Acciones si está activo (para Administradores)
+            if (reservation.status == ReservationStatus.active && onReturn != null) ...[
+              const SizedBox(height: 16),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  ElevatedButton.icon(
+                    onPressed: onReturn,
+                    icon: const Icon(Icons.check_circle_outline_rounded, size: 18),
+                    label: const Text('Recibir Devolución'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppTheme.available,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      minimumSize: Size.zero,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      textStyle: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
+                    ),
+                  ),
                 ],
               ),
             ],

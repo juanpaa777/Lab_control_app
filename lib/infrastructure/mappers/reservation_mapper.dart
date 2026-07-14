@@ -14,6 +14,9 @@ class ReservationMapper {
       returnDate: model.returnDate,
       status: ReservationStatus.values.byName(model.status),
       qrCode: model.qrCode,
+      userName: model.userName,
+      userEmail: model.userEmail,
+      studentId: model.studentId,
     );
   }
 
@@ -27,6 +30,9 @@ class ReservationMapper {
       returnDate: entity.returnDate,
       status: entity.status.name,
       qrCode: entity.qrCode,
+      userName: entity.userName,
+      userEmail: entity.userEmail,
+      studentId: entity.studentId,
     );
   }
 }

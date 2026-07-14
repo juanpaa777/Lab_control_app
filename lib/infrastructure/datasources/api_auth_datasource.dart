@@ -29,8 +29,9 @@ class ApiAuthDatasource implements AuthDatasource {
     required String name,
     required String email,
     required String password,
-    required String studentId,
-    required String career,
+    String? studentId,
+    String? career,
+    required String role,
   }) async {
     try {
       final response = await dio.post('/auth/register', data: {
@@ -39,6 +40,7 @@ class ApiAuthDatasource implements AuthDatasource {
         'password': password,
         'studentId': studentId,
         'career': career,
+        'role': role,
       });
       final userModel = UserModel.fromJson(response.data as Map<String, dynamic>);
       return UserMapper.modelToEntity(userModel);

@@ -17,8 +17,9 @@ class AuthRepositoryImpl implements AuthRepository {
     required String name,
     required String email,
     required String password,
-    required String studentId,
-    required String career,
+    String? studentId,
+    String? career,
+    required String role,
   }) {
     return datasource.register(
       name: name,
@@ -26,6 +27,7 @@ class AuthRepositoryImpl implements AuthRepository {
       password: password,
       studentId: studentId,
       career: career,
+      role: role,
     );
   }
 

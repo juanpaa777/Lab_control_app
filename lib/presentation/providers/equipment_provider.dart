@@ -53,6 +53,59 @@ class EquipmentListNotifier extends StateNotifier<AsyncValue<List<Equipment>>> {
       state = AsyncValue.data(updatedList);
     });
   }
+
+  Future<void> createEquipment({
+    required String name,
+    required String categoryId,
+    required String code,
+    required String location,
+    required int totalUnits,
+    required String imageUrl,
+  }) async {
+    final newEq = await repository.createEquipment(
+      name: name,
+      categoryId: categoryId,
+      code: code,
+      location: location,
+      totalUnits: totalUnits,
+      imageUrl: imageUrl,
+    );
+    state.whenData((list) {
+      state = AsyncValue.data([...list, newEq]);
+    });
+  }
+
+  Future<void> updateEquipment({
+    required String id,
+    required String name,
+    required String categoryId,
+    required String code,
+    required String location,
+    required int totalUnits,
+    required String imageUrl,
+  }) async {
+    final updatedEq = await repository.updateEquipment(
+      id: id,
+      name: name,
+      categoryId: categoryId,
+      code: code,
+      location: location,
+      totalUnits: totalUnits,
+      imageUrl: imageUrl,
+    );
+    state.whenData((list) {
+      final updatedList = list.map((eq) => eq.id == id ? updatedEq : eq).toList();
+      state = AsyncValue.data(updatedList);
+    });
+  }
+
+  Future<void> deleteEquipment(String id) async {
+    await repository.deleteEquipment(id);
+    state.whenData((list) {
+      final updatedList = list.where((eq) => eq.id != id).toList();
+      state = AsyncValue.data(updatedList);
+    });
+  }
 }
 
 // Proveedor global para la lista total de equipos

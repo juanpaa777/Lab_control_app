@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lab_control_app/presentation/providers/auth_provider.dart';
@@ -7,18 +8,39 @@ import 'package:lab_control_app/presentation/screens/auth/register_screen.dart';
 import 'package:lab_control_app/presentation/screens/main/main_screen.dart';
 import 'package:lab_control_app/presentation/screens/equipment/equipment_detail_screen.dart';
 import 'package:lab_control_app/presentation/screens/equipment/reservation_form_screen.dart';
+import 'package:lab_control_app/presentation/screens/equipment/equipment_form_screen.dart';
 import 'package:lab_control_app/presentation/screens/reservation/reservation_qr_screen.dart';
 import 'package:lab_control_app/presentation/views/home_view.dart';
 import 'package:lab_control_app/presentation/views/reservations_view.dart';
 import 'package:lab_control_app/presentation/views/history_view.dart';
 import 'package:lab_control_app/presentation/views/profile_view.dart';
 
+class GoRouterRefreshListenable extends ChangeNotifier {
+  bool _isAuthed = false;
+
+  GoRouterRefreshListenable(Ref ref) {
+    ref.listen<AuthState>(
+      authProvider,
+      (previous, next) {
+        if (next.isAuthed != _isAuthed) {
+          _isAuthed = next.isAuthed;
+          notifyListeners();
+        }
+      },
+      fireImmediately: true,
+    );
+  }
+}
+
 final routerProvider = Provider<GoRouter>((ref) {
-  final authState = ref.watch(authProvider);
+  final refreshListenable = GoRouterRefreshListenable(ref);
 
   return GoRouter(
     initialLocation: '/welcome',
+    refreshListenable: refreshListenable,
     redirect: (context, state) {
+      final authState = ref.read(authProvider);
+
       // Si el enrutador está cargando o inicializando, evitar redirecciones
       if (authState.isLoading) return null;
 
@@ -63,6 +85,17 @@ final routerProvider = Provider<GoRouter>((ref) {
                 path: '/home',
                 builder: (context, state) => const HomeView(),
                 routes: [
+                  GoRoute(
+                    path: 'equipment/new',
+                    builder: (context, state) => const EquipmentFormScreen(),
+                  ),
+                  GoRoute(
+                    path: 'equipment/:id/edit',
+                    builder: (context, state) {
+                      final id = state.pathParameters['id']!;
+                      return EquipmentFormScreen(equipmentId: id);
+                    },
+                  ),
                   GoRoute(
                     path: 'equipment/:id',
                     builder: (context, state) {

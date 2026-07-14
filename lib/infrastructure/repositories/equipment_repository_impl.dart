@@ -27,4 +27,49 @@ class EquipmentRepositoryImpl implements EquipmentRepository {
   Future<void> updateAvailableUnits(String equipmentId, int availableUnits) {
     return datasource.updateAvailableUnits(equipmentId, availableUnits);
   }
+
+  @override
+  Future<Equipment> createEquipment({
+    required String name,
+    required String categoryId,
+    required String code,
+    required String location,
+    required int totalUnits,
+    required String imageUrl,
+  }) {
+    return datasource.createEquipment(
+      name: name,
+      categoryId: categoryId,
+      code: code,
+      location: location,
+      totalUnits: totalUnits,
+      imageUrl: imageUrl,
+    );
+  }
+
+  @override
+  Future<Equipment> updateEquipment({
+    required String id,
+    required String name,
+    required String categoryId,
+    required String code,
+    required String location,
+    required int totalUnits,
+    required String imageUrl,
+  }) {
+    return datasource.updateEquipment(
+      id: id,
+      name: name,
+      categoryId: categoryId,
+      code: code,
+      location: location,
+      totalUnits: totalUnits,
+      imageUrl: imageUrl,
+    );
+  }
+
+  @override
+  Future<void> deleteEquipment(String id) {
+    return datasource.deleteEquipment(id);
+  }
 }

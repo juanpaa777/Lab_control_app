@@ -9,6 +9,10 @@ class ReservationModel {
   final DateTime returnDate;
   final String status;
   final String qrCode;
+  
+  final String? userName;
+  final String? userEmail;
+  final String? studentId;
 
   ReservationModel({
     required this.id,
@@ -19,6 +23,9 @@ class ReservationModel {
     required this.returnDate,
     required this.status,
     required this.qrCode,
+    this.userName,
+    this.userEmail,
+    this.studentId,
   });
 
   factory ReservationModel.fromJson(Map<String, dynamic> json) {
@@ -27,10 +34,13 @@ class ReservationModel {
       userId: json['userId'] as String,
       equipment: EquipmentModel.fromJson(json['equipment'] as Map<String, dynamic>),
       quantity: json['quantity'] as int,
-      pickupDate: DateTime.parse(json['pickupDate'] as String),
-      returnDate: DateTime.parse(json['returnDate'] as String),
+      pickupDate: DateTime.parse(json['pickupDate'] as String).toLocal(),
+      returnDate: DateTime.parse(json['returnDate'] as String).toLocal(),
       status: json['status'] as String,
       qrCode: json['qrCode'] as String,
+      userName: json['userName'] as String?,
+      userEmail: json['userEmail'] as String?,
+      studentId: json['studentId'] as String?,
     );
   }
 
@@ -44,6 +54,9 @@ class ReservationModel {
       'returnDate': returnDate.toIso8601String(),
       'status': status,
       'qrCode': qrCode,
+      'userName': userName,
+      'userEmail': userEmail,
+      'studentId': studentId,
     };
   }
 }

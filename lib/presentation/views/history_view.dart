@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lab_control_app/config/helpers/reservation_status_helper.dart';
 import 'package:lab_control_app/config/theme/app_theme.dart';
+import 'package:lab_control_app/presentation/providers/auth_provider.dart';
 import 'package:lab_control_app/presentation/providers/reservation_provider.dart';
 import 'package:lab_control_app/presentation/widgets/reservations/reservation_card.dart';
 
@@ -10,6 +11,8 @@ class HistoryView extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final user = ref.watch(authProvider).user;
+    final isAdmin = user?.role == 'admin';
     final reservationsAsync = ref.watch(reservationProvider);
 
     return Scaffold(
@@ -54,10 +57,12 @@ class HistoryView extends ConsumerWidget {
                         ),
                       ),
                       const SizedBox(height: 6),
-                      const Text(
-                        'Aquí se mostrarán los equipos que hayas devuelto o los préstamos cancelados.',
+                      Text(
+                        isAdmin
+                            ? 'Aquí se mostrarán todos los préstamos finalizados o cancelados del sistema.'
+                            : 'Aquí se mostrarán los equipos que hayas devuelto o los préstamos cancelados.',
                         textAlign: TextAlign.center,
-                        style: TextStyle(
+                        style: const TextStyle(
                           fontSize: 14,
                           color: AppTheme.textSecondary,
                         ),
