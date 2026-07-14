@@ -8,26 +8,83 @@ export const register = async (req, res) => {
     return res.status(400).json({ error: 'Nombre, correo y contraseña son obligatorios' });
   }
 
+  // 1. Validar nombre completo
+  const trimmedName = name.trim();
+  if (trimmedName.length < 3) {
+    return res.status(400).json({ error: 'El nombre debe tener al menos 3 caracteres' });
+  }
+  if (!trimmedName.includes(' ')) {
+    return res.status(400).json({ error: 'Debes ingresar nombre y apellido' });
+  }
+  if (!/^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]+$/.test(trimmedName)) {
+    return res.status(400).json({ error: 'El nombre solo debe contener letras' });
+  }
+
+  // 2. Validar correo institucional / formato general de email
+  const emailRegex = /^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$/i;
+  if (!emailRegex.test(email.trim())) {
+    return res.status(400).json({ error: 'El correo electrónico no es válido' });
+  }
+
+  // 3. Validar contraseña fuerte (mínimo 8 caracteres, al menos 1 mayúscula, 1 minúscula y 1 número)
+  if (password.length < 8) {
+    return res.status(400).json({ error: 'La contraseña debe tener al menos 8 caracteres' });
+  }
+  if (!/[A-Z]/.test(password) || !/[a-z]/.test(password) || !/[0-9]/.test(password)) {
+    return res.status(400).json({ error: 'La contraseña debe contener al menos una mayúscula, una minúscula y un número' });
+  }
+
   if (role === 'admin') {
     return res.status(403).json({ error: 'No está permitido registrarse como administrador directamente' });
   }
+
+  const validCareers = [
+    'Desarrollo de software',
+    'Redes',
+    'Diseño Digital',
+    'Entornos Virtuales',
+    'Mecatronica',
+    'procesos Industriales'
+  ];
 
   if (role === 'student') {
     if (!studentId || !career) {
       return res.status(400).json({ error: 'Matrícula y carrera son obligatorias para estudiantes' });
     }
+    // Validar matrícula del alumno: exactamente 10 dígitos numéricos
+    if (!/^\d{10}$/.test(studentId.trim())) {
+      return res.status(400).json({ error: 'La matrícula del alumno debe constar de exactamente 10 dígitos numéricos' });
+    }
+    // Validar que la carrera esté en la lista preestablecida
+    if (!validCareers.includes(career.trim())) {
+      return res.status(400).json({ error: 'La carrera seleccionada no es válida' });
+    }
+  }
+
+  if (role === 'teacher') {
+    if (!studentId || !studentId.trim()) {
+      return res.status(400).json({ error: 'La matrícula es obligatoria para docentes' });
+    }
+    // Validar matrícula del docente: exactamente 10 dígitos numéricos
+    if (!/^\d{10}$/.test(studentId.trim())) {
+      return res.status(400).json({ error: 'La matrícula del docente debe constar de exactamente 10 dígitos numéricos' });
+    }
   }
 
   try {
+    const trimmedEmail = email.trim();
+    const trimmedStudentId = studentId ? studentId.trim() : null;
+    const trimmedCareer = career ? career.trim() : null;
+
     // 1. Verificar si el correo ya existe
-    const userExist = await pool.query('SELECT id FROM users WHERE email = $1', [email]);
+    const userExist = await pool.query('SELECT id FROM users WHERE email = $1', [trimmedEmail]);
     if (userExist.rows.length > 0) {
       return res.status(400).json({ error: 'El correo electrónico ya está registrado' });
     }
 
     // 2. Verificar si la matrícula ya existe (si se proporciona)
-    if (studentId) {
-      const studentExist = await pool.query('SELECT id FROM users WHERE student_id = $1', [studentId]);
+    if (trimmedStudentId) {
+      const studentExist = await pool.query('SELECT id FROM users WHERE student_id = $1', [trimmedStudentId]);
       if (studentExist.rows.length > 0) {
         return res.status(400).json({ error: 'La matrícula ya está registrada' });
       }
@@ -42,7 +99,7 @@ export const register = async (req, res) => {
       `INSERT INTO users (name, email, password, student_id, career, role) 
        VALUES ($1, $2, $3, $4, $5, $6) 
        RETURNING id, name, email, student_id AS "studentId", career, role`,
-      [name, email, hashedPassword, studentId || null, career || null, role]
+      [trimmedName, trimmedEmail, hashedPassword, trimmedStudentId, trimmedCareer, role]
     );
 
     return res.status(201).json(result.rows[0]);

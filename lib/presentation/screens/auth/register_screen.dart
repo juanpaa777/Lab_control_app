@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lab_control_app/config/theme/app_theme.dart';
 import 'package:lab_control_app/presentation/providers/auth_provider.dart';
@@ -17,19 +18,27 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   final _nameController = TextEditingController();
   final _emailController = TextEditingController();
   final _studentIdController = TextEditingController();
-  final _careerController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
 
   bool _obscurePassword = true;
   String _selectedRole = 'student';
+  String? _selectedCareer;
+
+  final List<String> _careers = const [
+    'Desarrollo de software',
+    'Redes',
+    'Diseño Digital',
+    'Entornos Virtuales',
+    'Mecatronica',
+    'procesos Industriales',
+  ];
 
   @override
   void dispose() {
     _nameController.dispose();
     _emailController.dispose();
     _studentIdController.dispose();
-    _careerController.dispose();
     _passwordController.dispose();
     _confirmPasswordController.dispose();
     super.dispose();
@@ -40,8 +49,8 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
 
     final name = _nameController.text.trim();
     final email = _emailController.text.trim();
-    final studentId = _selectedRole == 'student' ? _studentIdController.text.trim() : null;
-    final career = _selectedRole == 'student' ? _careerController.text.trim() : null;
+    final studentId = (_selectedRole == 'student' || _selectedRole == 'teacher') ? _studentIdController.text.trim() : null;
+    final career = _selectedRole == 'student' ? _selectedCareer : null;
     final password = _passwordController.text;
 
     final success = await ref.read(authProvider.notifier).register(
@@ -137,7 +146,13 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                     prefixIcon: Icon(Icons.person_outline),
                   ),
                   validator: (value) {
-                    if (value == null || value.trim().isEmpty) return 'Ingresa tu nombre';
+                    if (value == null || value.trim().isEmpty) return 'Ingresa tu nombre completo';
+                    final trimmed = value.trim();
+                    if (trimmed.length < 3) return 'Debe tener al menos 3 caracteres';
+                    if (!trimmed.contains(' ')) return 'Ingresa tu nombre y apellido';
+                    if (!RegExp(r'^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]+$').hasMatch(trimmed)) {
+                      return 'El nombre solo debe contener letras';
+                    }
                     return null;
                   },
                 ),
@@ -158,8 +173,8 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                   ),
                   validator: (value) {
                     if (value == null || value.trim().isEmpty) return 'Ingresa tu correo';
-                    if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value)) {
-                      return 'Ingresa un correo institucional válido';
+                    if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$', caseSensitive: false).hasMatch(value)) {
+                      return 'Ingresa un correo válido';
                     }
                     return null;
                   },
@@ -184,13 +199,20 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                             TextFormField(
                               controller: _studentIdController,
                               keyboardType: TextInputType.number,
+                              inputFormatters: [
+                                FilteringTextInputFormatter.digitsOnly,
+                                LengthLimitingTextInputFormatter(10),
+                              ],
                               decoration: const InputDecoration(
-                                hintText: '100XXXXX',
+                                hintText: '10 dígitos',
                                 prefixIcon: Icon(Icons.badge_outlined),
                               ),
                               validator: (value) {
                                 if (_selectedRole != 'student') return null;
                                 if (value == null || value.trim().isEmpty) return 'Requerido';
+                                if (!RegExp(r'^\d{10}$').hasMatch(value.trim())) {
+                                  return 'Debe ser de 10 dígitos';
+                                }
                                 return null;
                               },
                             ),
@@ -208,15 +230,35 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                               style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppTheme.textPrimary),
                             ),
                             const SizedBox(height: 6),
-                            TextFormField(
-                              controller: _careerController,
+                            DropdownButtonFormField<String>(
+                              value: _selectedCareer,
+                              isExpanded: true,
                               decoration: const InputDecoration(
-                                hintText: 'Sistemas/Civil/...',
-                                prefixIcon: Icon(Icons.class_outlined),
+                                prefixIcon: Icon(Icons.school_outlined),
+                                contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                               ),
+                              hint: const Text(
+                                'Seleccionar',
+                                style: TextStyle(fontSize: 13, color: AppTheme.textSecondary),
+                              ),
+                              items: _careers.map((career) {
+                                return DropdownMenuItem(
+                                  value: career,
+                                  child: Text(
+                                    career,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: const TextStyle(fontSize: 12, color: AppTheme.textPrimary),
+                                  ),
+                                );
+                              }).toList(),
+                              onChanged: (value) {
+                                setState(() {
+                                  _selectedCareer = value;
+                                });
+                              },
                               validator: (value) {
                                 if (_selectedRole != 'student') return null;
-                                if (value == null || value.trim().isEmpty) return 'Requerido';
+                                if (value == null || value.isEmpty) return 'Requerido';
                                 return null;
                               },
                             ),
@@ -224,6 +266,36 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                         ),
                       ),
                     ],
+                  ),
+                  const SizedBox(height: 16),
+                ],
+
+                if (_selectedRole == 'teacher') ...[
+                  // Matrícula para docentes (ancho completo)
+                  const Text(
+                    'Matrícula de Docente',
+                    style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppTheme.textPrimary),
+                  ),
+                  const SizedBox(height: 6),
+                  TextFormField(
+                    controller: _studentIdController,
+                    keyboardType: TextInputType.number,
+                    inputFormatters: [
+                      FilteringTextInputFormatter.digitsOnly,
+                      LengthLimitingTextInputFormatter(10),
+                    ],
+                    decoration: const InputDecoration(
+                      hintText: '10 dígitos',
+                      prefixIcon: Icon(Icons.badge_outlined),
+                    ),
+                    validator: (value) {
+                      if (_selectedRole != 'teacher') return null;
+                      if (value == null || value.trim().isEmpty) return 'Ingresa tu matrícula';
+                      if (!RegExp(r'^\d{10}$').hasMatch(value.trim())) {
+                        return 'Debe ser de 10 dígitos';
+                      }
+                      return null;
+                    },
                   ),
                   const SizedBox(height: 16),
                 ],
@@ -238,7 +310,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                   controller: _passwordController,
                   obscureText: _obscurePassword,
                   decoration: InputDecoration(
-                    hintText: 'Mínimo 6 caracteres',
+                    hintText: 'Mínimo 8 caracteres, 1 mayúscula, 1 número',
                     prefixIcon: const Icon(Icons.lock_outlined),
                     suffixIcon: IconButton(
                       icon: Icon(
@@ -249,7 +321,16 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                   ),
                   validator: (value) {
                     if (value == null || value.isEmpty) return 'Ingresa tu contraseña';
-                    if (value.length < 6) return 'Debe tener al menos 6 caracteres';
+                    if (value.length < 8) return 'Mínimo 8 caracteres';
+                    if (!RegExp(r'[A-Z]').hasMatch(value)) {
+                      return 'Al menos una letra mayúscula';
+                    }
+                    if (!RegExp(r'[a-z]').hasMatch(value)) {
+                      return 'Al menos una letra minúscula';
+                    }
+                    if (!RegExp(r'[0-9]').hasMatch(value)) {
+                      return 'Al menos un número';
+                    }
                     return null;
                   },
                 ),
