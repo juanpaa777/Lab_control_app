@@ -60,6 +60,68 @@ class ApiEquipmentDatasource implements EquipmentDatasource {
     return;
   }
 
+  @override
+  Future<Equipment> createEquipment({
+    required String name,
+    required String categoryId,
+    required String code,
+    required String location,
+    required int totalUnits,
+    required String imageUrl,
+  }) async {
+    try {
+      final response = await dio.post('/equipment', data: {
+        'name': name,
+        'categoryId': categoryId,
+        'code': code,
+        'location': location,
+        'totalUnits': totalUnits,
+        'imageUrl': imageUrl,
+      });
+      final model = EquipmentModel.fromJson(response.data as Map<String, dynamic>);
+      return EquipmentMapper.modelToEntity(model);
+    } on DioException catch (e) {
+      _handleDioError(e, 'Error al crear el equipo.');
+    }
+    throw Exception('Error inesperado al crear equipo.');
+  }
+
+  @override
+  Future<Equipment> updateEquipment({
+    required String id,
+    required String name,
+    required String categoryId,
+    required String code,
+    required String location,
+    required int totalUnits,
+    required String imageUrl,
+  }) async {
+    try {
+      final response = await dio.put('/equipment/$id', data: {
+        'name': name,
+        'categoryId': categoryId,
+        'code': code,
+        'location': location,
+        'totalUnits': totalUnits,
+        'imageUrl': imageUrl,
+      });
+      final model = EquipmentModel.fromJson(response.data as Map<String, dynamic>);
+      return EquipmentMapper.modelToEntity(model);
+    } on DioException catch (e) {
+      _handleDioError(e, 'Error al actualizar el equipo.');
+    }
+    throw Exception('Error inesperado al actualizar equipo.');
+  }
+
+  @override
+  Future<void> deleteEquipment(String id) async {
+    try {
+      await dio.delete('/equipment/$id');
+    } on DioException catch (e) {
+      _handleDioError(e, 'Error al eliminar el equipo.');
+    }
+  }
+
   void _handleDioError(DioException e, String defaultMessage) {
     if (e.type == DioExceptionType.connectionTimeout ||
         e.type == DioExceptionType.receiveTimeout ||

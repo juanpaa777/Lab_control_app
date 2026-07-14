@@ -2,10 +2,20 @@ import bcrypt from 'bcrypt';
 import pool from '../config/db.js';
 
 export const register = async (req, res) => {
-  const { name, email, password, studentId, career } = req.body;
+  const { name, email, password, studentId, career, role = 'student' } = req.body;
 
-  if (!name || !email || !password || !studentId || !career) {
-    return res.status(400).json({ error: 'Todos los campos son obligatorios' });
+  if (!name || !email || !password) {
+    return res.status(400).json({ error: 'Nombre, correo y contraseña son obligatorios' });
+  }
+
+  if (role === 'admin') {
+    return res.status(403).json({ error: 'No está permitido registrarse como administrador directamente' });
+  }
+
+  if (role === 'student') {
+    if (!studentId || !career) {
+      return res.status(400).json({ error: 'Matrícula y carrera son obligatorias para estudiantes' });
+    }
   }
 
   try {
@@ -15,10 +25,12 @@ export const register = async (req, res) => {
       return res.status(400).json({ error: 'El correo electrónico ya está registrado' });
     }
 
-    // 2. Verificar si la matrícula ya existe
-    const studentExist = await pool.query('SELECT id FROM users WHERE student_id = $1', [studentId]);
-    if (studentExist.rows.length > 0) {
-      return res.status(400).json({ error: 'La matrícula ya está registrada' });
+    // 2. Verificar si la matrícula ya existe (si se proporciona)
+    if (studentId) {
+      const studentExist = await pool.query('SELECT id FROM users WHERE student_id = $1', [studentId]);
+      if (studentExist.rows.length > 0) {
+        return res.status(400).json({ error: 'La matrícula ya está registrada' });
+      }
     }
 
     // 3. Hashear la contraseña
@@ -27,10 +39,10 @@ export const register = async (req, res) => {
 
     // 4. Insertar en base de datos
     const result = await pool.query(
-      `INSERT INTO users (name, email, password, student_id, career) 
-       VALUES ($1, $2, $3, $4, $5) 
-       RETURNING id, name, email, student_id AS "studentId", career`,
-      [name, email, hashedPassword, studentId, career]
+      `INSERT INTO users (name, email, password, student_id, career, role) 
+       VALUES ($1, $2, $3, $4, $5, $6) 
+       RETURNING id, name, email, student_id AS "studentId", career, role`,
+      [name, email, hashedPassword, studentId || null, career || null, role]
     );
 
     return res.status(201).json(result.rows[0]);
@@ -50,7 +62,7 @@ export const login = async (req, res) => {
   try {
     // 1. Buscar usuario
     const result = await pool.query(
-      `SELECT id, name, email, password, student_id AS "studentId", career 
+      `SELECT id, name, email, password, student_id AS "studentId", career, role 
        FROM users WHERE email = $1`,
       [email]
     );

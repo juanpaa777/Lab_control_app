@@ -7,6 +7,7 @@ import 'package:lab_control_app/infrastructure/datasources/api_reservation_datas
 // import 'package:lab_control_app/infrastructure/datasources/mock_reservation_datasource.dart'; // Descomentar para usar mocks
 import 'package:lab_control_app/infrastructure/repositories/reservation_repository_impl.dart';
 import 'auth_provider.dart';
+import 'package:lab_control_app/domain/entities/user.dart';
 import 'equipment_provider.dart';
 import 'dio_provider.dart';
 
@@ -34,7 +35,7 @@ class ReservationNotifier extends StateNotifier<AsyncValue<List<Reservation>>> {
     // Escucha cambios de autenticación para refrescar las reservas del usuario activo
     ref.listen<AuthState>(authProvider, (previous, next) {
       if (next.user != null) {
-        loadReservations(next.user!.id);
+        loadReservations(next.user!);
       } else {
         state = const AsyncValue.data([]);
       }
@@ -43,16 +44,21 @@ class ReservationNotifier extends StateNotifier<AsyncValue<List<Reservation>>> {
     // Carga inicial si el usuario ya está autenticado
     final currentUser = ref.read(authProvider).user;
     if (currentUser != null) {
-      loadReservations(currentUser.id);
+      loadReservations(currentUser);
     } else {
       state = const AsyncValue.data([]);
     }
   }
 
-  Future<void> loadReservations(String userId) async {
+  Future<void> loadReservations(User user) async {
     state = const AsyncValue.loading();
     try {
-      final list = await repository.getReservationsByUserId(userId);
+      final List<Reservation> list;
+      if (user.role == 'admin') {
+        list = await repository.getAllReservations();
+      } else {
+        list = await repository.getReservationsByUserId(user.id);
+      }
       state = AsyncValue.data(list);
     } catch (e, stack) {
       state = AsyncValue.error(e, stack);
@@ -132,6 +138,32 @@ class ReservationNotifier extends StateNotifier<AsyncValue<List<Reservation>>> {
       });
     } catch (e) {
       throw Exception('No se pudo cancelar la reserva: ${e.toString().replaceAll('Exception: ', '')}');
+    }
+  }
+
+  // Actualizar el estado de una reserva (para administradores)
+  Future<void> updateStatus(String reservationId, ReservationStatus newStatus) async {
+    try {
+      final updatedRes = await repository.updateReservationStatus(reservationId, newStatus.name);
+
+      // Actualizar el estado de la reserva en la lista localmente
+      state.whenData((list) {
+        final updatedList = list.map((res) {
+          if (res.id == reservationId) {
+            return updatedRes;
+          }
+          return res;
+        }).toList();
+        state = AsyncValue.data(updatedList);
+      });
+
+      // Actualizar el stock local del equipo en la interfaz
+      ref.read(equipmentListProvider.notifier).updateStockLocal(
+        updatedRes.equipment.id,
+        updatedRes.equipment.availableUnits,
+      );
+    } catch (e) {
+      throw Exception('No se pudo actualizar el estado de la reserva: ${e.toString().replaceAll('Exception: ', '')}');
     }
   }
 }

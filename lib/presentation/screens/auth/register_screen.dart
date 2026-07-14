@@ -22,6 +22,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   final _confirmPasswordController = TextEditingController();
 
   bool _obscurePassword = true;
+  String _selectedRole = 'student';
 
   @override
   void dispose() {
@@ -39,8 +40,8 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
 
     final name = _nameController.text.trim();
     final email = _emailController.text.trim();
-    final studentId = _studentIdController.text.trim();
-    final career = _careerController.text.trim();
+    final studentId = _selectedRole == 'student' ? _studentIdController.text.trim() : null;
+    final career = _selectedRole == 'student' ? _careerController.text.trim() : null;
     final password = _passwordController.text;
 
     final success = await ref.read(authProvider.notifier).register(
@@ -49,6 +50,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
       password: password,
       studentId: studentId,
       career: career,
+      role: _selectedRole,
     );
 
     if (!mounted) return;
@@ -71,7 +73,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Registro de Estudiante'),
+        title: const Text('Registro de Usuario'),
       ),
       body: SafeArea(
         child: SingleChildScrollView(
@@ -98,6 +100,29 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                   ),
                 ),
                 const SizedBox(height: 24),
+                
+                // Tipo de Usuario (Rol)
+                const Text(
+                  'Tipo de Usuario',
+                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppTheme.textPrimary),
+                ),
+                const SizedBox(height: 6),
+                DropdownButtonFormField<String>(
+                  value: _selectedRole,
+                  decoration: const InputDecoration(
+                    prefixIcon: Icon(Icons.assignment_ind_outlined),
+                  ),
+                  items: const [
+                    DropdownMenuItem(value: 'student', child: Text('Estudiante')),
+                    DropdownMenuItem(value: 'teacher', child: Text('Docente')),
+                  ],
+                  onChanged: (value) {
+                    setState(() {
+                      _selectedRole = value ?? 'student';
+                    });
+                  },
+                ),
+                const SizedBox(height: 16),
                 
                 // Nombre Completo
                 const Text(
@@ -141,63 +166,67 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                 ),
                 const SizedBox(height: 16),
 
-                // Fila para Matrícula y Carrera
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Matrícula
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text(
-                            'Matrícula',
-                            style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppTheme.textPrimary),
-                          ),
-                          const SizedBox(height: 6),
-                          TextFormField(
-                            controller: _studentIdController,
-                            keyboardType: TextInputType.number,
-                            decoration: const InputDecoration(
-                              hintText: '100XXXXX',
-                              prefixIcon: Icon(Icons.badge_outlined),
+                // Fila para Matrícula y Carrera (Solo estudiantes)
+                if (_selectedRole == 'student') ...[
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Matrícula
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              'Matrícula',
+                              style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppTheme.textPrimary),
                             ),
-                            validator: (value) {
-                              if (value == null || value.trim().isEmpty) return 'Requerido';
-                              return null;
-                            },
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(width: 16),
-                    // Carrera
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text(
-                            'Carrera',
-                            style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppTheme.textPrimary),
-                          ),
-                          const SizedBox(height: 6),
-                          TextFormField(
-                            controller: _careerController,
-                            decoration: const InputDecoration(
-                              hintText: 'Sistemas/Civil/...',
-                              prefixIcon: Icon(Icons.class_outlined),
+                            const SizedBox(height: 6),
+                            TextFormField(
+                              controller: _studentIdController,
+                              keyboardType: TextInputType.number,
+                              decoration: const InputDecoration(
+                                hintText: '100XXXXX',
+                                prefixIcon: Icon(Icons.badge_outlined),
+                              ),
+                              validator: (value) {
+                                if (_selectedRole != 'student') return null;
+                                if (value == null || value.trim().isEmpty) return 'Requerido';
+                                return null;
+                              },
                             ),
-                            validator: (value) {
-                              if (value == null || value.trim().isEmpty) return 'Requerido';
-                              return null;
-                            },
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16),
+                      const SizedBox(width: 16),
+                      // Carrera
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              'Carrera',
+                              style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppTheme.textPrimary),
+                            ),
+                            const SizedBox(height: 6),
+                            TextFormField(
+                              controller: _careerController,
+                              decoration: const InputDecoration(
+                                hintText: 'Sistemas/Civil/...',
+                                prefixIcon: Icon(Icons.class_outlined),
+                              ),
+                              validator: (value) {
+                                if (_selectedRole != 'student') return null;
+                                if (value == null || value.trim().isEmpty) return 'Requerido';
+                                return null;
+                              },
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                ],
                 
                 // Contraseña
                 const Text(

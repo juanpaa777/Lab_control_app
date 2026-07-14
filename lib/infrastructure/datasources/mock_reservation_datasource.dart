@@ -86,4 +86,44 @@ class MockReservationDatasource implements ReservationDatasource {
     _reservations[index] = updatedReservation;
     return updatedReservation;
   }
+
+  @override
+  Future<List<Reservation>> getAllReservations() async {
+    await Future.delayed(const Duration(milliseconds: 400));
+    return List.from(_reservations);
+  }
+
+  @override
+  Future<Reservation> updateReservationStatus(String reservationId, String status) async {
+    await Future.delayed(const Duration(milliseconds: 400));
+    final index = _reservations.indexWhere((res) => res.id == reservationId);
+    if (index == -1) throw Exception('Reserva no encontrada');
+
+    final res = _reservations[index];
+    final targetStatus = ReservationStatus.values.firstWhere(
+      (e) => e.name == status,
+      orElse: () => ReservationStatus.pending
+    );
+
+    final wasRestoring = res.status == ReservationStatus.completed || res.status == ReservationStatus.cancelled;
+    final isRestoring = targetStatus == ReservationStatus.completed || targetStatus == ReservationStatus.cancelled;
+
+    if (!wasRestoring && isRestoring) {
+      try {
+        final equipment = await _equipmentDatasource.getEquipmentById(res.equipment.id);
+        final restoredUnits = equipment.availableUnits + res.quantity;
+        await _equipmentDatasource.updateAvailableUnits(res.equipment.id, restoredUnits);
+      } catch (_) {}
+    } else if (wasRestoring && !isRestoring) {
+      try {
+        final equipment = await _equipmentDatasource.getEquipmentById(res.equipment.id);
+        final reducedUnits = equipment.availableUnits - res.quantity;
+        await _equipmentDatasource.updateAvailableUnits(res.equipment.id, reducedUnits);
+      } catch (_) {}
+    }
+
+    final updatedRes = res.copyWith(status: targetStatus);
+    _reservations[index] = updatedRes;
+    return updatedRes;
+  }
 }

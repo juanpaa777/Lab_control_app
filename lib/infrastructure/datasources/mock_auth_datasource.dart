@@ -12,6 +12,15 @@ class MockAuthDatasource implements AuthDatasource {
       email: 'diego.pardo@universidad.edu',
       studentId: '202300123',
       career: 'Ingeniería en Sistemas',
+      role: 'student',
+    ),
+    const User(
+      id: 'usr-002',
+      name: 'Admin Laboratorio',
+      email: 'admin@universidad.edu',
+      studentId: null,
+      career: null,
+      role: 'admin',
     ),
   ];
 
@@ -32,12 +41,14 @@ class MockAuthDatasource implements AuthDatasource {
       // o lanzar error si no existe
       if (email.contains('@')) {
         final name = email.split('@')[0];
+        final role = email.contains('admin') ? 'admin' : (email.contains('teacher') ? 'teacher' : 'student');
         final newUser = User(
           id: 'usr-${DateTime.now().millisecondsSinceEpoch}',
           name: name[0].toUpperCase() + name.substring(1),
           email: email,
-          studentId: '2023${DateTime.now().millisecond}',
-          career: 'Ingeniería en Computación',
+          studentId: role == 'student' ? '2023${DateTime.now().millisecond}' : null,
+          career: role == 'student' ? 'Ingeniería en Computación' : null,
+          role: role,
         );
         _mockUsers.add(newUser);
         _currentUser = newUser;
@@ -52,8 +63,9 @@ class MockAuthDatasource implements AuthDatasource {
     required String name,
     required String email,
     required String password,
-    required String studentId,
-    required String career,
+    String? studentId,
+    String? career,
+    required String role,
   }) async {
     await Future.delayed(const Duration(milliseconds: 1000));
     
@@ -68,6 +80,7 @@ class MockAuthDatasource implements AuthDatasource {
       email: email,
       studentId: studentId,
       career: career,
+      role: role,
     );
 
     _mockUsers.add(newUser);

@@ -26,6 +26,7 @@ class _HomeViewState extends ConsumerState<HomeView> {
   @override
   Widget build(BuildContext context) {
     final user = ref.watch(authProvider).user;
+    final isAdmin = user?.role == 'admin';
     final categoriesAsync = ref.watch(categoriesProvider);
     final selectedCategoryId = ref.watch(selectedCategoryIdProvider);
     final filteredEquipment = ref.watch(filteredEquipmentProvider);
@@ -206,6 +207,12 @@ class _HomeViewState extends ConsumerState<HomeView> {
                             onTap: () {
                               context.push('/home/equipment/${equipment.id}');
                             },
+                            onEdit: isAdmin 
+                                ? () => context.push('/home/equipment/${equipment.id}/edit') 
+                                : null,
+                            onDelete: isAdmin 
+                                ? () => _showDeleteDialog(context, equipment) 
+                                : null,
                           );
                         },
                         childCount: filteredEquipment.length,
@@ -228,6 +235,56 @@ class _HomeViewState extends ConsumerState<HomeView> {
             ],
           ),
         ),
+      ),
+      floatingActionButton: isAdmin
+          ? FloatingActionButton(
+              onPressed: () => context.push('/home/equipment/new'),
+              backgroundColor: AppTheme.primary,
+              child: const Icon(Icons.add, color: Colors.white),
+            )
+          : null,
+    );
+  }
+
+  void _showDeleteDialog(BuildContext context, dynamic equipment) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('¿Eliminar equipo?'),
+        content: Text('¿Estás seguro de que deseas eliminar "${equipment.name}"? Esta acción no se puede deshacer.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancelar'),
+          ),
+          FilledButton(
+            onPressed: () async {
+              Navigator.pop(context);
+              try {
+                await ref.read(equipmentListProvider.notifier).deleteEquipment(equipment.id);
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Equipo eliminado del catálogo'),
+                      backgroundColor: AppTheme.available,
+                    ),
+                  );
+                }
+              } catch (e) {
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(e.toString().replaceAll('Exception: ', '')),
+                      backgroundColor: AppTheme.unavailable,
+                    ),
+                  );
+                }
+              }
+            },
+            style: FilledButton.styleFrom(backgroundColor: AppTheme.unavailable),
+            child: const Text('Eliminar'),
+          ),
+        ],
       ),
     );
   }

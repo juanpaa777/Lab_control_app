@@ -7,8 +7,9 @@ CREATE TABLE IF NOT EXISTS users (
     name VARCHAR(100) NOT NULL,
     email VARCHAR(100) UNIQUE NOT NULL,
     password VARCHAR(255) NOT NULL,
-    student_id VARCHAR(50) UNIQUE NOT NULL,
-    career VARCHAR(100) NOT NULL,
+    student_id VARCHAR(50) UNIQUE,
+    career VARCHAR(100),
+    role VARCHAR(20) DEFAULT 'student' CHECK (role IN ('student', 'teacher', 'admin')),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -69,6 +70,7 @@ INSERT INTO equipment (id, name, category_id, code, location, total_units, avail
 ('e3c4d5e6-f7a8-9b0c-1d2e-3f4a5b6c7d8e', 'Cable USB-C', 'c1a2b3c4-d5e6-7f8a-9b0c-1d2e3f4a5b6c', 'EQ-003', 'Almacén de laboratorio', 15, 10),
 ('e4d5e6f7-a8b9-0c1d-2e3f-4a5b6c7d8e9f', 'Router Cisco', 'c3c4d5e6-f7a8-9b0c-1d2e-3f4a5b6c7d8e', 'EQ-004', 'Laboratorio de Redes', 4, 1);
 
--- Semilla de Estudiante de Prueba (Contraseña: password123, bcrypt hash: $2b$10$vI8aWB.7V25g9C.Vb50.O.uC61Hl1Xn2B/Lqy9i1cE/R0Qn.4gDra)
-INSERT INTO users (id, name, email, password, student_id, career) VALUES
-('f1a2b3c4-d5e6-7f8a-9b0c-1d2e3f4a5b6c', 'Diego Pardo', 'diego.pardo@universidad.edu', '$2b$10$p5GddS6a2.apB8bTvXUOu.6ckp1DoF0vtZR8lPoDC4N4vwttXt2RK', '202300123', 'Ingeniería en Sistemas');
+-- Semilla de Estudiante de Prueba (Contraseña: password123)
+INSERT INTO users (id, name, email, password, student_id, career, role) VALUES
+('f1a2b3c4-d5e6-7f8a-9b0c-1d2e3f4a5b6c', 'Diego Pardo', 'diego.pardo@universidad.edu', '$2b$10$p5GddS6a2.apB8bTvXUOu.6ckp1DoF0vtZR8lPoDC4N4vwttXt2RK', '202300123', 'Ingeniería en Sistemas', 'student'),
+('f2b3c4d5-e6f7-8a9b-0c1d-2e3f4a5b6c7d', 'Admin Laboratorio', 'admin@universidad.edu', '$2b$10$p5GddS6a2.apB8bTvXUOu.6ckp1DoF0vtZR8lPoDC4N4vwttXt2RK', NULL, NULL, 'admin');

@@ -6,4 +6,22 @@ abstract class EquipmentRepository {
   Future<List<EquipmentCategory>> getCategories();
   Future<Equipment> getEquipmentById(String id);
   Future<void> updateAvailableUnits(String equipmentId, int availableUnits);
+  Future<Equipment> createEquipment({
+    required String name,
+    required String categoryId,
+    required String code,
+    required String location,
+    required int totalUnits,
+    required String imageUrl,
+  });
+  Future<Equipment> updateEquipment({
+    required String id,
+    required String name,
+    required String categoryId,
+    required String code,
+    required String location,
+    required int totalUnits,
+    required String imageUrl,
+  });
+  Future<void> deleteEquipment(String id);
 }

@@ -93,8 +93,9 @@ class AuthNotifier extends StateNotifier<AuthState> {
     required String name,
     required String email,
     required String password,
-    required String studentId,
-    required String career,
+    String? studentId,
+    String? career,
+    required String role,
   }) async {
     state = state.copyWith(isLoading: true, errorMessage: null);
     try {
@@ -104,6 +105,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
         password: password,
         studentId: studentId,
         career: career,
+        role: role,
       );
       state = state.copyWith(user: user, isAuthed: true, isLoading: false);
       return true;

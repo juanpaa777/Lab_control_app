@@ -5,11 +5,15 @@ import 'package:lab_control_app/domain/entities/equipment.dart';
 class EquipmentCard extends StatelessWidget {
   final Equipment equipment;
   final VoidCallback onTap;
+  final VoidCallback? onEdit;
+  final VoidCallback? onDelete;
 
   const EquipmentCard({
     super.key,
     required this.equipment,
     required this.onTap,
+    this.onEdit,
+    this.onDelete,
   });
 
   @override
@@ -102,22 +106,61 @@ class EquipmentCard extends StatelessWidget {
                   ],
                 ),
               ),
-              // Badge de disponibilidad
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(
-                  color: statusColor.withOpacity(0.12),
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: statusColor.withOpacity(0.3), width: 1),
-                ),
-                child: Text(
-                  statusLabel,
-                  style: TextStyle(
-                    fontSize: 11,
-                    fontWeight: FontWeight.bold,
-                    color: statusColor,
+              // Badge de disponibilidad e icono de opciones si corresponde
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: statusColor.withOpacity(0.12),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: statusColor.withOpacity(0.3), width: 1),
+                    ),
+                    child: Text(
+                      statusLabel,
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.bold,
+                        color: statusColor,
+                      ),
+                    ),
                   ),
-                ),
+                  if (onEdit != null || onDelete != null) ...[
+                    const SizedBox(height: 8),
+                    PopupMenuButton<String>(
+                      icon: const Icon(Icons.more_horiz_rounded, size: 20, color: AppTheme.textSecondary),
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(),
+                      onSelected: (value) {
+                        if (value == 'edit' && onEdit != null) onEdit!();
+                        if (value == 'delete' && onDelete != null) onDelete!();
+                      },
+                      itemBuilder: (context) => [
+                        const PopupMenuItem(
+                          value: 'edit',
+                          child: Row(
+                            children: [
+                              Icon(Icons.edit_outlined, size: 18),
+                              SizedBox(width: 8),
+                              Text('Editar'),
+                            ],
+                          ),
+                        ),
+                        const PopupMenuItem(
+                          value: 'delete',
+                          child: Row(
+                            children: [
+                              Icon(Icons.delete_outline_rounded, color: AppTheme.unavailable, size: 18),
+                              SizedBox(width: 8),
+                              Text('Eliminar', style: TextStyle(color: AppTheme.unavailable)),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ],
               ),
             ],
           ),

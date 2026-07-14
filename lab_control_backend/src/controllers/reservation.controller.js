@@ -246,3 +246,153 @@ export const cancelReservation = async (req, res) => {
     client.release();
   }
 };
+
+export const getAllReservations = async (req, res) => {
+  try {
+    const queryText = `
+      SELECT 
+        r.id, 
+        r.user_id AS "userId", 
+        r.quantity, 
+        r.pickup_date AS "pickupDate", 
+        r.return_date AS "returnDate", 
+        r.status, 
+        r.reservation_code AS "qrCode",
+        json_build_object(
+          'id', e.id,
+          'name', e.name,
+          'code', e.code,
+          'location', e.location,
+          'totalUnits', e.total_units,
+          'availableUnits', e.available_units,
+          'imageUrl', e.image_url,
+          'category', json_build_object('id', c.id, 'name', c.name)
+        ) AS equipment,
+        u.name AS "userName",
+        u.email AS "userEmail",
+        u.student_id AS "studentId",
+        u.career AS "userCareer"
+      FROM reservations r
+      JOIN equipment e ON r.equipment_id = e.id
+      JOIN equipment_categories c ON e.category_id = c.id
+      JOIN users u ON r.user_id = u.id
+      ORDER BY r.created_at DESC
+    `;
+
+    const result = await pool.query(queryText);
+    return res.json(result.rows);
+  } catch (error) {
+    console.error('Error al obtener todas las reservas:', error);
+    return res.status(500).json({ error: 'Error al consultar reservas' });
+  }
+};
+
+export const updateReservationStatus = async (req, res) => {
+  const { id } = req.params;
+  const { status } = req.body;
+
+  if (!status || !['pending', 'active', 'completed', 'cancelled'].includes(status)) {
+    return res.status(400).json({ error: 'Estado inválido' });
+  }
+
+  const client = await pool.connect();
+
+  try {
+    await client.query('BEGIN');
+
+    const resResult = await client.query(
+      'SELECT id, equipment_id, quantity, status FROM reservations WHERE id = $1 FOR UPDATE',
+      [id]
+    );
+
+    if (resResult.rows.length === 0) {
+      await client.query('ROLLBACK');
+      return res.status(404).json({ error: 'Reserva no encontrada' });
+    }
+
+    const reservation = resResult.rows[0];
+    const oldStatus = reservation.status;
+
+    if (oldStatus === status) {
+      await client.query('ROLLBACK');
+      return res.status(400).json({ error: `La reserva ya tiene el estado ${status}` });
+    }
+
+    const isOldRestoring = oldStatus === 'completed' || oldStatus === 'cancelled';
+    const isNewRestoring = status === 'completed' || status === 'cancelled';
+
+    if (!isOldRestoring && isNewRestoring) {
+      const eqResult = await client.query(
+        'SELECT available_units FROM equipment WHERE id = $1 FOR UPDATE',
+        [reservation.equipment_id]
+      );
+      if (eqResult.rows.length > 0) {
+        const newAvailableUnits = eqResult.rows[0].available_units + reservation.quantity;
+        await client.query(
+          'UPDATE equipment SET available_units = $1 WHERE id = $2',
+          [newAvailableUnits, reservation.equipment_id]
+        );
+      }
+    } else if (isOldRestoring && !isNewRestoring) {
+      const eqResult = await client.query(
+        'SELECT available_units FROM equipment WHERE id = $1 FOR UPDATE',
+        [reservation.equipment_id]
+      );
+      if (eqResult.rows.length > 0) {
+        const available = eqResult.rows[0].available_units;
+        if (available < reservation.quantity) {
+          await client.query('ROLLBACK');
+          return res.status(400).json({ error: 'No hay suficiente stock disponible para reactivar la reserva' });
+        }
+        const newAvailableUnits = available - reservation.quantity;
+        await client.query(
+          'UPDATE equipment SET available_units = $1 WHERE id = $2',
+          [newAvailableUnits, reservation.equipment_id]
+        );
+      }
+    }
+
+    const updateResult = await client.query(
+      `UPDATE reservations SET status = $1 WHERE id = $2 
+       RETURNING id, user_id AS "userId", quantity, pickup_date AS "pickupDate", return_date AS "returnDate", status, reservation_code AS "qrCode"`,
+      [status, id]
+    );
+
+    const updatedRes = updateResult.rows[0];
+
+    const eqDetails = await client.query(
+      `SELECT e.id, e.name, e.code, e.location, e.total_units, e.available_units, e.image_url,
+              json_build_object('id', c.id, 'name', c.name) AS category
+       FROM equipment e 
+       JOIN equipment_categories c ON e.category_id = c.id 
+       WHERE e.id = $1`,
+      [reservation.equipment_id]
+    );
+
+    const equipment = eqDetails.rows[0];
+
+    await client.query('COMMIT');
+
+    const responseData = {
+      ...updatedRes,
+      equipment: {
+        id: equipment.id,
+        name: equipment.name,
+        code: equipment.code,
+        location: equipment.location,
+        totalUnits: equipment.total_units,
+        availableUnits: equipment.available_units,
+        imageUrl: equipment.image_url,
+        category: equipment.category
+      }
+    };
+
+    return res.json(responseData);
+  } catch (error) {
+    await client.query('ROLLBACK');
+    console.error('Error al actualizar estado de reserva:', error);
+    return res.status(500).json({ error: 'Error del servidor al actualizar reserva' });
+  } finally {
+    client.release();
+  }
+};
