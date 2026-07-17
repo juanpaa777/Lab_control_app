@@ -305,6 +305,15 @@ class _ReservationsViewState extends ConsumerState<ReservationsView> {
           ],
         ),
       ),
+      floatingActionButton: isAdmin
+          ? FloatingActionButton.extended(
+              onPressed: () => context.push('/reservations/scan'),
+              icon: const Icon(Icons.qr_code_scanner_rounded),
+              label: const Text('Escanear QR'),
+              backgroundColor: AppTheme.primary,
+              foregroundColor: Colors.white,
+            )
+          : null,
     );
   }
 }

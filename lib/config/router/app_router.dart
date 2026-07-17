@@ -10,6 +10,7 @@ import 'package:lab_control_app/presentation/screens/equipment/equipment_detail_
 import 'package:lab_control_app/presentation/screens/equipment/reservation_form_screen.dart';
 import 'package:lab_control_app/presentation/screens/equipment/equipment_form_screen.dart';
 import 'package:lab_control_app/presentation/screens/reservation/reservation_qr_screen.dart';
+import 'package:lab_control_app/presentation/screens/reservation/qr_scanner_screen.dart';
 import 'package:lab_control_app/presentation/views/home_view.dart';
 import 'package:lab_control_app/presentation/views/reservations_view.dart';
 import 'package:lab_control_app/presentation/views/history_view.dart';
@@ -130,6 +131,10 @@ final routerProvider = Provider<GoRouter>((ref) {
                       final resId = state.pathParameters['resId']!;
                       return ReservationQrScreen(reservationId: resId);
                     },
+                  ),
+                  GoRoute(
+                    path: 'scan',
+                    builder: (context, state) => const QrScannerScreen(),
                   ),
                 ],
               ),

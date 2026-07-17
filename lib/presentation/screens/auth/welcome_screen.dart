@@ -20,12 +20,12 @@ class WelcomeScreen extends StatelessWidget {
             ),
           ),
           
-          // 2. Efecto de vidrio desdibujado más denso (Frosted Glassmorphism)
+          // 2. Efecto de vidrio desdibujado (Frosted Glassmorphism)
           Positioned.fill(
             child: BackdropFilter(
-              filter: ImageFilter.blur(sigmaX: 12.0, sigmaY: 12.0),
+              filter: ImageFilter.blur(sigmaX: 8.0, sigmaY: 8.0),
               child: Container(
-                color: Colors.white.withOpacity(0.75), // Mayor opacidad para asegurar legibilidad
+                color: Colors.white.withOpacity(0.65), // Capa blanca semi-transparente para legibilidad
               ),
             ),
           ),
@@ -39,19 +39,12 @@ class WelcomeScreen extends StatelessWidget {
                 children: [
                   const Spacer(),
                   
-                  // Logo o Icono Universitario resaltado con sombra suave y fondo blanco vidrio
+                  // Logo o Icono Universitario
                   Container(
                     padding: const EdgeInsets.all(24),
                     decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.9),
+                      color: AppTheme.primary.withOpacity(0.1),
                       shape: BoxShape.circle,
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.08),
-                          blurRadius: 20,
-                          offset: const Offset(0, 4),
-                        ),
-                      ],
                     ),
                     child: const Icon(
                       Icons.school_rounded,
@@ -62,25 +55,24 @@ class WelcomeScreen extends StatelessWidget {
                   const SizedBox(height: 24),
                   
                   // Nombre de la App
-                  Text(
+                  const Text(
                     'LabControl',
-                    style: const TextStyle(
-                      fontSize: 34,
-                      fontWeight: FontWeight.w800, // Extra bold en Flutter
+                    style: TextStyle(
+                      fontSize: 32,
+                      fontWeight: FontWeight.bold,
                       color: AppTheme.textPrimary,
                       letterSpacing: 0.5,
                     ),
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 8),
                   
-                  // Slogan con mayor contraste y grosor
-                  Text(
+                  // Slogan
+                  const Text(
                     'Préstamos de equipo tecnológico ágiles para estudiantes y laboratorios universitarios.',
                     textAlign: TextAlign.center,
-                    style: const TextStyle(
-                      fontSize: 16,
-                      color: AppTheme.textPrimary,
-                      fontWeight: FontWeight.w600, // Semi-bold para legibilidad
+                    style: TextStyle(
+                      fontSize: 15,
+                      color: AppTheme.textSecondary,
                       height: 1.5,
                     ),
                   ),
@@ -105,13 +97,12 @@ class WelcomeScreen extends StatelessWidget {
                   
                   const SizedBox(height: 24),
                   
-                  // Footer con mayor contraste
+                  // Footer
                   Text(
                     'Versión 1.0.0 • LabControl Estudiantes',
                     style: TextStyle(
-                      fontSize: 12,
-                      color: AppTheme.textPrimary.withOpacity(0.7),
-                      fontWeight: FontWeight.w500,
+                      fontSize: 11,
+                      color: AppTheme.textSecondary.withOpacity(0.8),
                     ),
                   ),
                 ],
