@@ -1,13 +1,16 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:lab_control_app/config/helpers/date_formatter.dart';
+import 'package:lab_control_app/config/helpers/reservation_status_helper.dart';
 import 'package:lab_control_app/config/theme/app_theme.dart';
 import 'package:lab_control_app/presentation/providers/reservation_provider.dart';
+import 'package:lab_control_app/presentation/providers/auth_provider.dart';
 import 'package:lab_control_app/presentation/widgets/shared/custom_button.dart';
 
-class ReservationQrScreen extends ConsumerWidget {
+class ReservationQrScreen extends ConsumerStatefulWidget {
   final String reservationId;
 
   const ReservationQrScreen({
@@ -16,16 +19,44 @@ class ReservationQrScreen extends ConsumerWidget {
   });
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<ReservationQrScreen> createState() => _ReservationQrScreenState();
+}
+
+class _ReservationQrScreenState extends ConsumerState<ReservationQrScreen> {
+  Timer? _pollingTimer;
+
+  @override
+  void initState() {
+    super.initState();
+    // Polling cada 2 segundos para escuchar cambios en tiempo real
+    _pollingTimer = Timer.periodic(const Duration(seconds: 2), (timer) {
+      _checkStatusUpdate();
+    });
+  }
+
+  @override
+  void dispose() {
+    _pollingTimer?.cancel();
+    super.dispose();
+  }
+
+  void _checkStatusUpdate() {
+    final authState = ref.read(authProvider);
+    if (authState.user != null) {
+      ref.read(reservationProvider.notifier).loadReservations(authState.user!);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final reservationsAsync = ref.watch(reservationProvider);
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Código QR de Recogida'),
+        title: const Text('Estado de la Reserva'),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_rounded),
           onPressed: () {
-            // Ir de regreso a la lista de reservas
             if (context.canPop()) {
               context.pop();
             } else {
@@ -37,12 +68,35 @@ class ReservationQrScreen extends ConsumerWidget {
       body: SafeArea(
         child: reservationsAsync.when(
           data: (list) {
-            final resIndex = list.indexWhere((r) => r.id == reservationId);
+            final resIndex = list.indexWhere((r) => r.id == widget.reservationId);
             if (resIndex == -1) {
               return const Center(child: Text('Reserva no encontrada'));
             }
             final reservation = list[resIndex];
 
+            // Si el estado ya es activo (entregado)
+            if (reservation.status == ReservationStatus.active) {
+              return _buildSuccessScreen(
+                icon: Icons.check_circle_rounded,
+                iconColor: AppTheme.primary,
+                title: '¡Préstamo Entregado!',
+                subtitle: 'El encargado del laboratorio ha confirmado la entrega del equipo.',
+                reservation: reservation,
+              );
+            }
+
+            // Si el estado es completado (devuelto)
+            if (reservation.status == ReservationStatus.completed) {
+              return _buildSuccessScreen(
+                icon: Icons.assignment_turned_in_rounded,
+                iconColor: Colors.blue.shade700,
+                title: '¡Devolución Recibida!',
+                subtitle: 'El equipo ha sido devuelto al laboratorio e ingresado al inventario con éxito.',
+                reservation: reservation,
+              );
+            }
+
+            // Vista por defecto (Pendiente): Código QR
             return SingleChildScrollView(
               padding: const EdgeInsets.all(24.0),
               child: Column(
@@ -193,6 +247,94 @@ class ReservationQrScreen extends ConsumerWidget {
           error: (err, _) => Center(
             child: Text('Error al cargar QR: $err'),
           ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSuccessScreen({
+    required IconData icon,
+    required Color iconColor,
+    required String title,
+    required String subtitle,
+    required dynamic reservation,
+  }) {
+    return Center(
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.all(32.0),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            // Icono Animado / Grande de éxito
+            Container(
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                color: iconColor.withOpacity(0.1),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                icon,
+                size: 90,
+                color: iconColor,
+              ),
+            ),
+            const SizedBox(height: 24),
+            
+            // Título
+            Text(
+              title,
+              style: const TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+                color: AppTheme.textPrimary,
+              ),
+            ),
+            const SizedBox(height: 12),
+            
+            // Subtítulo descritivo
+            Text(
+              subtitle,
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                fontSize: 14,
+                color: AppTheme.textSecondary,
+                height: 1.5,
+              ),
+            ),
+            const SizedBox(height: 32),
+            
+            // Resumen de datos en el éxito
+            Card(
+              elevation: 0,
+              color: AppTheme.background,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              child: Padding(
+                padding: const EdgeInsets.all(20.0),
+                child: Column(
+                  children: [
+                    _buildDetailRow('Equipo', reservation.equipment.name),
+                    const SizedBox(height: 8),
+                    _buildDetailRow('Cantidad', '${reservation.quantity} unidades'),
+                    const SizedBox(height: 8),
+                    _buildDetailRow('Ubicación', reservation.equipment.location),
+                    const SizedBox(height: 8),
+                    _buildDetailRow(
+                      'Retorno', 
+                      DateFormatter.formatDateTime(reservation.returnDate)
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 40),
+            
+            // Botón Entendido
+            CustomButton(
+              text: 'Entendido',
+              width: double.infinity,
+              onPressed: () => context.go('/reservations'),
+            ),
+          ],
         ),
       ),
     );
