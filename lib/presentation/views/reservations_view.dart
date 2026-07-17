@@ -130,6 +130,17 @@ class _ReservationsViewState extends ConsumerState<ReservationsView> {
       appBar: AppBar(
         title: Text(isAdmin ? 'Control de Préstamos' : 'Mis Reservas Activas'),
         elevation: 0,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.refresh_rounded),
+            tooltip: 'Actualizar',
+            onPressed: () {
+              if (user != null) {
+                ref.read(reservationProvider.notifier).loadReservations(user);
+              }
+            },
+          ),
+        ],
       ),
       body: SafeArea(
         child: Column(
@@ -265,33 +276,41 @@ class _ReservationsViewState extends ConsumerState<ReservationsView> {
                     );
                   }
 
-                  return ListView.builder(
-                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                    itemCount: filteredList.length,
-                    itemBuilder: (context, index) {
-                      final reservation = filteredList[index];
-                      return ReservationCard(
-                        reservation: reservation,
-                        onQrTap: isAdmin
-                            ? null
-                            : () {
-                                context.push('/reservations/qr/${reservation.id}');
-                              },
-                        onCancel: isAdmin
-                            ? null
-                            : () => _confirmCancel(
-                                  context, 
-                                  reservation.id, 
-                                  reservation.equipment.name
-                                ),
-                        onDeliver: isAdmin
-                            ? () => _updateStatus(context, reservation.id, ReservationStatus.active, 'entregado')
-                            : null,
-                        onReturn: isAdmin
-                            ? () => _updateStatus(context, reservation.id, ReservationStatus.completed, 'devuelto')
-                            : null,
-                      );
+                  return RefreshIndicator(
+                    onRefresh: () async {
+                      if (user != null) {
+                        await ref.read(reservationProvider.notifier).loadReservations(user);
+                      }
                     },
+                    color: AppTheme.primary,
+                    child: ListView.builder(
+                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                      itemCount: filteredList.length,
+                      itemBuilder: (context, index) {
+                        final reservation = filteredList[index];
+                        return ReservationCard(
+                          reservation: reservation,
+                          onQrTap: isAdmin
+                              ? null
+                              : () {
+                                  context.push('/reservations/qr/${reservation.id}');
+                                },
+                          onCancel: isAdmin
+                              ? null
+                              : () => _confirmCancel(
+                                    context, 
+                                    reservation.id, 
+                                    reservation.equipment.name
+                                  ),
+                          onDeliver: isAdmin
+                              ? () => _updateStatus(context, reservation.id, ReservationStatus.active, 'entregado')
+                              : null,
+                          onReturn: isAdmin
+                              ? () => _updateStatus(context, reservation.id, ReservationStatus.completed, 'devuelto')
+                              : null,
+                        );
+                      },
+                    ),
                   );
                 },
                 loading: () => const Center(
