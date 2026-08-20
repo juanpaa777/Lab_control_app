@@ -144,3 +144,60 @@ export const login = async (req, res) => {
     return res.status(500).json({ error: 'Error del servidor en el inicio de sesión' });
   }
 };
+
+// --- TV Device Pairing Endpoints ---
+const tvPairings = new Map();
+const generatePairingCode = () => {
+  const chars = '0123456789';
+  let code = '';
+  for (let i = 0; i < 4; i++) {
+    code += chars[Math.floor(Math.random() * chars.length)];
+  }
+  return `LC-${code}`;
+};
+export const requestTvPairing = async (req, res) => {
+  const code = generatePairingCode();
+  tvPairings.set(code, {
+    status: 'pending',
+    user: null,
+    createdAt: Date.now()
+  });
+  
+  // Expira en 5 minutos para liberar memoria
+  setTimeout(() => {
+    if (tvPairings.has(code) && tvPairings.get(code).status === 'pending') {
+      tvPairings.delete(code);
+    }
+  }, 5 * 60 * 1000);
+  return res.json({ code });
+};
+export const getTvPairingStatus = async (req, res) => {
+  const { code } = req.params;
+  const pairing = tvPairings.get(code.toUpperCase());
+  if (!pairing) {
+    return res.json({ status: 'expired' });
+  }
+  if (pairing.status === 'paired') {
+    const user = pairing.user;
+    tvPairings.delete(code.toUpperCase()); // Limpia tras verificación exitosa
+    return res.json({ status: 'paired', user });
+  }
+  return res.json({ status: 'pending' });
+};
+export const pairTv = async (req, res) => {
+  const { code, user } = req.body;
+  if (!code || !user) {
+    return res.status(400).json({ error: 'Código y datos del usuario son obligatorios' });
+  }
+  const pairing = tvPairings.get(code.toUpperCase());
+  if (!pairing) {
+    return res.status(404).json({ error: 'El código de vinculación no existe o ha expirado' });
+  }
+  if (pairing.status === 'paired') {
+    return res.status(400).json({ error: 'Este código ya ha sido utilizado' });
+  }
+  pairing.status = 'paired';
+  pairing.user = user;
+  tvPairings.set(code.toUpperCase(), pairing);
+  return res.json({ success: true });
+};

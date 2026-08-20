@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lab_control_app/config/theme/app_theme.dart';
 import 'package:lab_control_app/presentation/providers/auth_provider.dart';
 import 'package:lab_control_app/presentation/widgets/shared/custom_button.dart';
+import 'package:lab_control_app/presentation/screens/tv_pairing_mobile_screen.dart';
 
 class ProfileView extends ConsumerWidget {
   const ProfileView({super.key});
@@ -112,6 +113,30 @@ class ProfileView extends ConsumerWidget {
                 ),
               ),
               const SizedBox(height: 32),
+              
+              if (user?.role == 'admin') ...[
+                CustomButton(
+                  text: 'Vincular Pantalla TV',
+                  icon: Icons.tv_rounded,
+                  width: double.infinity,
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => TvPairingMobileScreen(
+                          currentUser: {
+                            'id': user!.id,
+                            'name': user.name,
+                            'email': user.email,
+                            'role': user.role,
+                          },
+                        ),
+                      ),
+                    );
+                  },
+                ),
+                const SizedBox(height: 16),
+              ],
               
               // Botón de Cerrar Sesión
               CustomButton(
