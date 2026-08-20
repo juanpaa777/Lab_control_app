@@ -1,9 +1,10 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lab_control_app/config/theme/app_theme.dart';
 import 'package:lab_control_app/presentation/providers/auth_provider.dart';
 import 'package:lab_control_app/presentation/widgets/shared/custom_button.dart';
 import 'package:lab_control_app/presentation/screens/tv_pairing_mobile_screen.dart';
+import 'package:lab_control_app/presentation/screens/watch_pairing_mobile_screen.dart';
 
 class ProfileView extends ConsumerWidget {
   const ProfileView({super.key});
@@ -126,6 +127,29 @@ class ProfileView extends ConsumerWidget {
                         builder: (context) => TvPairingMobileScreen(
                           currentUser: {
                             'id': user!.id,
+                            'name': user.name,
+                            'email': user.email,
+                            'role': user.role,
+                          },
+                        ),
+                      ),
+                    );
+                  },
+                ),
+                const SizedBox(height: 16),
+              ],
+              if (user != null) ...[
+                CustomButton(
+                  text: 'Vincular Reloj Wear OS',
+                  icon: Icons.watch_rounded,
+                  width: double.infinity,
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => WatchPairingMobileScreen(
+                          currentUser: {
+                            'id': user.id,
                             'name': user.name,
                             'email': user.email,
                             'role': user.role,

@@ -1,4 +1,4 @@
-import bcrypt from 'bcrypt';
+﻿import bcrypt from 'bcrypt';
 import pool from '../config/db.js';
 
 export const register = async (req, res) => {
@@ -162,7 +162,7 @@ export const requestTvPairing = async (req, res) => {
     user: null,
     createdAt: Date.now()
   });
-  
+
   // Expira en 5 minutos para liberar memoria
   setTimeout(() => {
     if (tvPairings.has(code) && tvPairings.get(code).status === 'pending') {
@@ -199,5 +199,75 @@ export const pairTv = async (req, res) => {
   pairing.status = 'paired';
   pairing.user = user;
   tvPairings.set(code.toUpperCase(), pairing);
+  return res.json({ success: true });
+};
+
+// --- Wear OS Device Pairing Endpoints ---
+const watchPairings = new Map();
+
+const generateWatchPairingCode = () => {
+  const chars = '0123456789';
+  let code = '';
+  for (let i = 0; i < 4; i++) {
+    code += chars[Math.floor(Math.random() * chars.length)];
+  }
+  return `WR-${code}`; // Código prefijado con WR (Wear)
+};
+
+export const requestWatchPairing = async (req, res) => {
+  const code = generateWatchPairingCode();
+  watchPairings.set(code, {
+    status: 'pending',
+    user: null,
+    createdAt: Date.now()
+  });
+
+  setTimeout(() => {
+    if (watchPairings.has(code) && watchPairings.get(code).status === 'pending') {
+      watchPairings.delete(code);
+    }
+  }, 5 * 60 * 1000);
+
+  return res.json({ code });
+};
+
+export const getWatchPairingStatus = async (req, res) => {
+  const { code } = req.params;
+  const pairing = watchPairings.get(code.toUpperCase());
+
+  if (!pairing) {
+    return res.json({ status: 'expired' });
+  }
+
+  if (pairing.status === 'paired') {
+    const user = pairing.user;
+    watchPairings.delete(code.toUpperCase());
+    return res.json({ status: 'paired', user });
+  }
+
+  return res.json({ status: 'pending' });
+};
+
+export const pairWatch = async (req, res) => {
+  const { code, user } = req.body;
+
+  if (!code || !user) {
+    return res.status(400).json({ error: 'Código y datos del usuario son obligatorios' });
+  }
+
+  const pairing = watchPairings.get(code.toUpperCase());
+
+  if (!pairing) {
+    return res.status(404).json({ error: 'El código de vinculación no existe o ha expirado' });
+  }
+
+  if (pairing.status === 'paired') {
+    return res.status(400).json({ error: 'Este código ya ha sido utilizado' });
+  }
+
+  pairing.status = 'paired';
+  pairing.user = user;
+  watchPairings.set(code.toUpperCase(), pairing);
+
   return res.json({ success: true });
 };
