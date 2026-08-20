@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lab_control_app/config/theme/app_theme.dart';
 import 'package:lab_control_app/presentation/providers/equipment_provider.dart';
+import 'package:lab_control_app/presentation/providers/auth_provider.dart';
 import 'package:lab_control_app/presentation/widgets/shared/custom_button.dart';
 
 class EquipmentDetailScreen extends ConsumerWidget {
@@ -16,6 +17,8 @@ class EquipmentDetailScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final equipmentListAsync = ref.watch(equipmentListProvider);
+    final authState = ref.watch(authProvider);
+    final isAdmin = authState.user?.role == 'admin';
 
     return Scaffold(
       appBar: AppBar(
@@ -216,14 +219,15 @@ class EquipmentDetailScreen extends ConsumerWidget {
 
                   const Spacer(),
 
-                  // Botón Reservar
-                  CustomButton(
-                    text: isBtnEnabled ? 'Reservar Equipo' : 'Sin disponibilidad',
-                    width: double.infinity,
-                    onPressed: isBtnEnabled
-                        ? () => context.push('/home/equipment/$equipmentId/reserve')
-                        : null,
-                  ),
+                  // Botón Reservar (oculto para administradores)
+                  if (!isAdmin)
+                    CustomButton(
+                      text: isBtnEnabled ? 'Reservar Equipo' : 'Sin disponibilidad',
+                      width: double.infinity,
+                      onPressed: isBtnEnabled
+                          ? () => context.push('/home/equipment/$equipmentId/reserve')
+                          : null,
+                    ),
                 ],
               ),
             );

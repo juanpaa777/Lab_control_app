@@ -86,6 +86,23 @@ class _ReservationFormScreenState extends ConsumerState<ReservationFormScreen> {
     });
   }
 
+  int _getMaxQuantity(dynamic equipment) {
+    int maxLimit = 3;
+    final cat = equipment.category.name.toLowerCase();
+    if (cat.contains('cómputo') || cat.contains('computo')) {
+      maxLimit = 1;
+    } else if (cat.contains('electrónica') || cat.contains('electronica')) {
+      maxLimit = 5;
+    } else if (cat.contains('redes')) {
+      maxLimit = 5;
+    } else {
+      maxLimit = 3;
+    }
+    
+    if (equipment.availableUnits <= 0) return 0;
+    return equipment.availableUnits.clamp(1, maxLimit);
+  }
+
   void _submit(dynamic equipment) async {
     if (!_formKey.currentState!.validate()) return;
 
@@ -143,6 +160,7 @@ class _ReservationFormScreenState extends ConsumerState<ReservationFormScreen> {
 
       if (mounted) {
         // Redirigir a la pantalla de QR de la nueva reserva
+        setState(() => _isSubmitting = false);
         context.go('/reservations/qr/${reservation.id}');
         
         ScaffoldMessenger.of(context).showSnackBar(
@@ -269,7 +287,7 @@ class _ReservationFormScreenState extends ConsumerState<ReservationFormScreen> {
                               ),
                               IconButton(
                                 icon: const Icon(Icons.add),
-                                onPressed: _quantity < equipment.availableUnits
+                                onPressed: _quantity < _getMaxQuantity(equipment)
                                     ? () => setState(() => _quantity++)
                                     : null,
                               ),
@@ -278,7 +296,7 @@ class _ReservationFormScreenState extends ConsumerState<ReservationFormScreen> {
                         ),
                         const SizedBox(width: 16),
                         Text(
-                          'Máximo: ${equipment.availableUnits} u.',
+                          'Máximo: ${_getMaxQuantity(equipment)} u.',
                           style: const TextStyle(fontSize: 13, color: AppTheme.textSecondary),
                         ),
                       ],
