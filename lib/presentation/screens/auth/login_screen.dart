@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lab_control_app/config/theme/app_theme.dart';
 import 'package:lab_control_app/presentation/providers/auth_provider.dart';
 import 'package:lab_control_app/presentation/widgets/shared/custom_button.dart';
+import 'package:lab_control_app/presentation/widgets/shared/custom_snackbar.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
@@ -36,13 +37,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
     if (!success) {
       final errorMsg = ref.read(authProvider).errorMessage ?? 'Error desconocido';
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(errorMsg),
-          backgroundColor: AppTheme.unavailable,
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
+      CustomSnackbar.showError(context, errorMsg);
     }
   }
 

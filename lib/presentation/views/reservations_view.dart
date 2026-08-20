@@ -6,6 +6,7 @@ import 'package:lab_control_app/config/theme/app_theme.dart';
 import 'package:lab_control_app/presentation/providers/auth_provider.dart';
 import 'package:lab_control_app/presentation/providers/reservation_provider.dart';
 import 'package:lab_control_app/presentation/widgets/reservations/reservation_card.dart';
+import 'package:lab_control_app/presentation/widgets/shared/custom_snackbar.dart';
 
 class ReservationsView extends ConsumerStatefulWidget {
   const ReservationsView({super.key});
@@ -23,7 +24,7 @@ class _ReservationsViewState extends ConsumerState<ReservationsView> {
     super.initState();
     _searchController.addListener(() {
       setState(() {
-        _searchQuery = _searchController.text;
+        _searchQuery = _searchController.text.trim();
       });
     });
   }
@@ -51,22 +52,10 @@ class _ReservationsViewState extends ConsumerState<ReservationsView> {
               try {
                 await ref.read(reservationProvider.notifier).cancelReservation(id);
                 if (!context.mounted) return;
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Reserva cancelada exitosamente'),
-                    backgroundColor: AppTheme.available,
-                    behavior: SnackBarBehavior.floating,
-                  ),
-                );
+                CustomSnackbar.showSuccess(context, 'Reserva cancelada exitosamente');
               } catch (e) {
                 if (!context.mounted) return;
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(e.toString().replaceAll('Exception: ', '')),
-                    backgroundColor: AppTheme.unavailable,
-                    behavior: SnackBarBehavior.floating,
-                  ),
-                );
+                CustomSnackbar.showError(context, e.toString().replaceAll('Exception: ', ''));
               }
             },
             style: ElevatedButton.styleFrom(
@@ -97,20 +86,10 @@ class _ReservationsViewState extends ConsumerState<ReservationsView> {
               try {
                 await ref.read(reservationProvider.notifier).updateStatus(id, newStatus);
                 if (!context.mounted) return;
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text('Estado de la reserva actualizado a: $actionLabel'),
-                    backgroundColor: AppTheme.available,
-                  ),
-                );
+                CustomSnackbar.showSuccess(context, 'Estado de la reserva actualizado a: $actionLabel');
               } catch (e) {
                 if (!context.mounted) return;
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(e.toString().replaceAll('Exception: ', '')),
-                    backgroundColor: AppTheme.unavailable,
-                  ),
-                );
+                CustomSnackbar.showError(context, e.toString().replaceAll('Exception: ', ''));
               }
             },
             child: const Text('Confirmar'),

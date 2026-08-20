@@ -9,6 +9,7 @@ import 'package:lab_control_app/config/theme/app_theme.dart';
 import 'package:lab_control_app/presentation/providers/reservation_provider.dart';
 import 'package:lab_control_app/presentation/providers/auth_provider.dart';
 import 'package:lab_control_app/presentation/widgets/shared/custom_button.dart';
+import 'package:lab_control_app/presentation/widgets/shared/floating_bottom_card.dart';
 
 class ReservationQrScreen extends ConsumerStatefulWidget {
   final String reservationId;
@@ -98,7 +99,7 @@ class _ReservationQrScreenState extends ConsumerState<ReservationQrScreen> {
 
             // Vista por defecto (Pendiente): Código QR
             return SingleChildScrollView(
-              padding: const EdgeInsets.all(24.0),
+              padding: const EdgeInsets.fromLTRB(24.0, 24.0, 24.0, 32.0),
               child: Column(
                 children: [
                   // Tarjeta del QR
@@ -229,14 +230,6 @@ class _ReservationQrScreenState extends ConsumerState<ReservationQrScreen> {
                       ),
                     ),
                   ),
-                  const SizedBox(height: 32),
-
-                  // Botón Volver
-                  CustomButton(
-                    text: 'Ir a Mis Reservas',
-                    width: double.infinity,
-                    onPressed: () => context.go('/reservations'),
-                  ),
                 ],
               ),
             );
@@ -248,6 +241,26 @@ class _ReservationQrScreenState extends ConsumerState<ReservationQrScreen> {
             child: Text('Error al cargar QR: $err'),
           ),
         ),
+      ),
+      bottomNavigationBar: reservationsAsync.when(
+        data: (list) {
+          final resIndex = list.indexWhere((r) => r.id == widget.reservationId);
+          if (resIndex == -1) return const SizedBox.shrink();
+          final reservation = list[resIndex];
+          final isSuccess = reservation.status == ReservationStatus.active ||
+                            reservation.status == ReservationStatus.completed;
+
+          return FloatingBottomCard(
+            child: CustomButton(
+              text: isSuccess ? 'Entendido' : 'Ir a Mis Reservas',
+              icon: isSuccess ? Icons.check_circle_outline_rounded : Icons.list_alt_rounded,
+              width: double.infinity,
+              onPressed: () => context.go('/reservations'),
+            ),
+          );
+        },
+        loading: () => const SizedBox.shrink(),
+        error: (err, _) => const SizedBox.shrink(),
       ),
     ),
     );
@@ -326,14 +339,6 @@ class _ReservationQrScreenState extends ConsumerState<ReservationQrScreen> {
                   ],
                 ),
               ),
-            ),
-            const SizedBox(height: 40),
-            
-            // Botón Entendido
-            CustomButton(
-              text: 'Entendido',
-              width: double.infinity,
-              onPressed: () => context.go('/reservations'),
             ),
           ],
         ),

@@ -6,6 +6,7 @@ import 'package:lab_control_app/config/theme/app_theme.dart';
 import 'package:lab_control_app/presentation/providers/equipment_provider.dart';
 import 'package:lab_control_app/presentation/providers/reservation_provider.dart';
 import 'package:lab_control_app/presentation/widgets/shared/custom_button.dart';
+import 'package:lab_control_app/presentation/widgets/shared/custom_snackbar.dart';
 
 class ReservationFormScreen extends ConsumerStatefulWidget {
   final String equipmentId;
@@ -107,11 +108,9 @@ class _ReservationFormScreenState extends ConsumerState<ReservationFormScreen> {
     if (!_formKey.currentState!.validate()) return;
 
     if (_pickupDateTime == null || _returnDateTime == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Por favor selecciona las fechas de recogida y devolución'),
-          backgroundColor: AppTheme.unavailable,
-        ),
+      CustomSnackbar.showError(
+        context,
+        'Por favor selecciona las fechas de recogida y devolución',
       );
       return;
     }
@@ -119,31 +118,25 @@ class _ReservationFormScreenState extends ConsumerState<ReservationFormScreen> {
     // Validaciones locales adicionales en UI para feedback rápido
     final now = DateTime.now();
     if (_pickupDateTime!.isBefore(now.subtract(const Duration(minutes: 5)))) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('La fecha de recogida no puede estar en el pasado'),
-          backgroundColor: AppTheme.unavailable,
-        ),
+      CustomSnackbar.showError(
+        context,
+        'La fecha de recogida no puede estar en el pasado',
       );
       return;
     }
 
     if (!_returnDateTime!.isAfter(_pickupDateTime!)) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('La devolución debe ser posterior a la recogida'),
-          backgroundColor: AppTheme.unavailable,
-        ),
+      CustomSnackbar.showError(
+        context,
+        'La devolución debe ser posterior a la recogida',
       );
       return;
     }
 
     if (_quantity > equipment.availableUnits) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('No hay suficientes unidades disponibles (${equipment.availableUnits})'),
-          backgroundColor: AppTheme.unavailable,
-        ),
+      CustomSnackbar.showError(
+        context,
+        'No hay suficientes unidades disponibles (${equipment.availableUnits})',
       );
       return;
     }
@@ -163,23 +156,17 @@ class _ReservationFormScreenState extends ConsumerState<ReservationFormScreen> {
         setState(() => _isSubmitting = false);
         context.go('/reservations/qr/${reservation.id}');
         
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('¡Reserva creada! Código QR generado.'),
-            backgroundColor: AppTheme.available,
-            behavior: SnackBarBehavior.floating,
-          ),
+        CustomSnackbar.showSuccess(
+          context,
+          '¡Reserva creada! Código QR generado.',
         );
       }
     } catch (e) {
       if (mounted) {
         setState(() => _isSubmitting = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(e.toString().replaceAll('Exception: ', '')),
-            backgroundColor: AppTheme.unavailable,
-            behavior: SnackBarBehavior.floating,
-          ),
+        CustomSnackbar.showError(
+          context,
+          e.toString().replaceAll('Exception: ', ''),
         );
       }
     }
@@ -374,17 +361,18 @@ class _ReservationFormScreenState extends ConsumerState<ReservationFormScreen> {
                                 fontWeight: FontWeight.w500,
                               ),
                             ),
-                            const Icon(Icons.calendar_month_outlined, color: AppTheme.primary),
+                             const Icon(Icons.calendar_month_outlined, color: AppTheme.primary),
                           ],
                         ),
                       ),
                     ),
-                    
-                    const SizedBox(height: 48),
 
-                    // Botones de acción
+                    const SizedBox(height: 32),
+
+                    // Botón de acción
                     CustomButton(
                       text: 'Confirmar Reserva',
+                      icon: Icons.check_circle_outline_rounded,
                       width: double.infinity,
                       isLoading: _isSubmitting,
                       onPressed: () => _submit(equipment),

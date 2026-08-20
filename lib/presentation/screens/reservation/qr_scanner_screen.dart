@@ -8,6 +8,7 @@ import 'package:lab_control_app/config/helpers/date_formatter.dart';
 import 'package:lab_control_app/config/helpers/reservation_status_helper.dart';
 import 'package:lab_control_app/domain/entities/reservation.dart';
 import 'package:lab_control_app/presentation/providers/reservation_provider.dart';
+import 'package:lab_control_app/presentation/widgets/shared/custom_snackbar.dart';
 
 class QrScannerScreen extends ConsumerStatefulWidget {
   const QrScannerScreen({super.key});
@@ -350,15 +351,11 @@ class _QrScannerScreenState extends ConsumerState<QrScannerScreen> {
       Navigator.pop(context); // Quitar cargando
 
       // Mostrar confirmación de éxito
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            nextStatus == ReservationStatus.active 
-                ? 'Préstamo iniciado. Equipo entregado con éxito.' 
-                : 'Devolución registrada. Inventario restaurado.'
-          ),
-          backgroundColor: AppTheme.primary,
-        ),
+      CustomSnackbar.showSuccess(
+        context,
+        nextStatus == ReservationStatus.active 
+            ? 'Préstamo iniciado. Equipo entregado con éxito.' 
+            : 'Devolución registrada. Inventario restaurado.',
       );
       
       // Salir de la pantalla del escáner
@@ -367,11 +364,9 @@ class _QrScannerScreenState extends ConsumerState<QrScannerScreen> {
       if (!mounted) return;
       Navigator.pop(context); // Quitar cargando
       
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Error: ${e.toString().replaceAll('Exception: ', '')}'),
-          backgroundColor: AppTheme.unavailable,
-        ),
+      CustomSnackbar.showError(
+        context,
+        'Error: ${e.toString().replaceAll('Exception: ', '')}',
       );
     }
   }

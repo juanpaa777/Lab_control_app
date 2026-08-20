@@ -36,7 +36,7 @@ class EquipmentDetailScreen extends ConsumerWidget {
             // Determinar color de estado y disponibilidad
             Color statusColor;
             String statusLabel;
-            bool isBtnEnabled = equipment.availableUnits > 0;
+            final isBtnEnabled = equipment.availableUnits > 0;
             
             if (equipment.availableUnits == 0) {
               statusColor = AppTheme.unavailable;
@@ -49,8 +49,8 @@ class EquipmentDetailScreen extends ConsumerWidget {
               statusLabel = 'Disponible (${equipment.availableUnits} de ${equipment.totalUnits} disp.)';
             }
 
-            return Padding(
-              padding: const EdgeInsets.all(24.0),
+            return SingleChildScrollView(
+              padding: const EdgeInsets.fromLTRB(24.0, 24.0, 24.0, 32.0),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -216,13 +216,13 @@ class EquipmentDetailScreen extends ConsumerWidget {
                       ),
                     ),
                   ),
-
-                  const Spacer(),
+                  const SizedBox(height: 32),
 
                   // Botón Reservar (oculto para administradores)
                   if (!isAdmin)
                     CustomButton(
                       text: isBtnEnabled ? 'Reservar Equipo' : 'Sin disponibilidad',
+                      icon: isBtnEnabled ? Icons.calendar_today_rounded : Icons.block_rounded,
                       width: double.infinity,
                       onPressed: isBtnEnabled
                           ? () => context.push('/home/equipment/$equipmentId/reserve')
