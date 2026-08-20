@@ -149,6 +149,8 @@ class ProfileView extends ConsumerWidget {
                       MaterialPageRoute(
                         builder: (context) => WatchPairingMobileScreen(
                           currentUser: {
+                            'studentId': user.studentId,
+                            'career': user.career,
                             'id': user.id,
                             'name': user.name,
                             'email': user.email,
