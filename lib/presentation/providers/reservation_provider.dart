@@ -65,6 +65,32 @@ class ReservationNotifier extends StateNotifier<AsyncValue<List<Reservation>>> {
     }
   }
 
+  /// Refresca las reservas en segundo plano SIN emitir estado loading.
+  /// Evita parpadeo y reset de scroll en pantallas con polling activo.
+  Future<void> refreshReservations(User user) async {
+    try {
+      final List<Reservation> list;
+      if (user.role == 'admin') {
+        list = await repository.getAllReservations();
+      } else {
+        list = await repository.getReservationsByUserId(user.id);
+      }
+      // Solo actualiza el state si algo cambio
+      final currentList = state.value ?? [];
+      final changed = list.length != currentList.length ||
+          list.any((r) {
+            final matches = currentList.where((o) => o.id == r.id);
+            if (matches.isEmpty) return true;
+            return matches.first.status != r.status;
+          });
+      if (changed) {
+        state = AsyncValue.data(list);
+      }
+    } catch (_) {
+      // Ignorar errores en refresco silencioso para no interrumpir la UI
+    }
+  }
+
   // Crear una nueva reserva con validaciones
   Future<Reservation> makeReservation({
     required String equipmentId,

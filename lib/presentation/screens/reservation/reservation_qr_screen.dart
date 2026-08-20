@@ -28,9 +28,9 @@ class _ReservationQrScreenState extends ConsumerState<ReservationQrScreen> {
   @override
   void initState() {
     super.initState();
-    // Polling cada 2 segundos para escuchar cambios en tiempo real
-    _pollingTimer = Timer.periodic(const Duration(seconds: 2), (timer) {
-      _checkStatusUpdate();
+    // Polling silencioso cada 4 seg sin causar estado loading (evita parpadeo)
+    _pollingTimer = Timer.periodic(const Duration(seconds: 4), (_) {
+      _silentRefresh();
     });
   }
 
@@ -40,32 +40,32 @@ class _ReservationQrScreenState extends ConsumerState<ReservationQrScreen> {
     super.dispose();
   }
 
-  void _checkStatusUpdate() {
+  Future<void> _silentRefresh() async {
+    if (!mounted) return;
     final authState = ref.read(authProvider);
-    if (authState.user != null) {
-      ref.read(reservationProvider.notifier).loadReservations(authState.user!);
-    }
+    if (authState.user == null) return;
+    await ref.read(reservationProvider.notifier).refreshReservations(authState.user!);
   }
 
   @override
   Widget build(BuildContext context) {
     final reservationsAsync = ref.watch(reservationProvider);
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Estado de la Reserva'),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_rounded),
-          onPressed: () {
-            if (context.canPop()) {
-              context.pop();
-            } else {
-              context.go('/reservations');
-            }
-          },
+    return PopScope(
+      // Interceptar el boton fisico/gesto Android: siempre ir a /reservations
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop) context.go('/reservations');
+      },
+      child: Scaffold(
+        appBar: AppBar(
+          title: const Text('Estado de la Reserva'),
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back_rounded),
+            onPressed: () => context.go('/reservations'),
+          ),
         ),
-      ),
-      body: SafeArea(
+        body: SafeArea(
         child: reservationsAsync.when(
           data: (list) {
             final resIndex = list.indexWhere((r) => r.id == widget.reservationId);
@@ -249,6 +249,7 @@ class _ReservationQrScreenState extends ConsumerState<ReservationQrScreen> {
           ),
         ),
       ),
+    ),
     );
   }
 
